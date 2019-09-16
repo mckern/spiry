@@ -69,8 +69,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%v", record)
-
 	result, err := whoisparser.Parse(record)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
