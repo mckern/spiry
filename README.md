@@ -5,22 +5,28 @@ A (trivially) simple domain expiration date checker tool
 ## Usage
 
 ```text
-$ spiry mckern.sh
-(2020-09-25 19:30:27 +0000 UTC) 375 days, 10 hours
-$ spiry github.com
-(2020-10-09 18:20:50 +0000 UTC) 389 days, 9 hours
 $ spiry example.com
-(2020-08-13 04:00:00 +0000 UTC) 332 days, 19 hours
+(2020-08-13 04:00:00 +0000 UTC) 330 days, 19 hours
+$ spiry google.dev
+(2020-06-13 22:30:20 +0000 UTC) 270 days, 13 hours
+$ spiry example.sh
+(2020-08-13 10:56:01 +0000 UTC) 330 days, 2 hours
+$ spiry example.it
+(2019-10-03 00:00:00 +0000 UTC) 15 days, 15 hours
+$ spiry example.horse
+domain "example.horse" is not registered or has expired
 ```
 
 ## Caveats
 
 - There's no tests for any of the code
-- There's basically no tests for domain validity
+  - there **is** an initial effort at extracting functionality into a package,
+    which should make it easier to write domain resolution test cases.
+- There's basically no tests for domain validity and if they work, they work
 
   ```text
   $ spiry example.local
-  dial tcp: lookup local.whois-servers.net on 1.1.1.1:53: no such host
+  domain 'example.local' is unmanaged and cannot be looked up
   ```
 
 - There's no standardized output format (yet)
