@@ -9,13 +9,17 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
-	"github.com/likexian/whois-go"
-	whoisparser "github.com/likexian/whois-parser-go"
+	whois "github.com/likexian/whois-go"
 	flag "github.com/mckern/pflag"
+	whoisparser "github.com/mckern/whois-parser-go"
+	"golang.org/x/net/publicsuffix"
 )
 
 // Basic information about `spiry` itself
-const name = "spiry"
+const (
+	name = "spiry"
+	iana = "whois.iana.org"
+)
 
 var buildDate string
 var gitCommit string
@@ -57,13 +61,61 @@ func init() {
 	}
 }
 
+func tld(domain string) (string, error) {
+	var err error
+	eTLD, icann := publicsuffix.PublicSuffix(domain)
+
+	if !icann {
+		err = fmt.Errorf("domain '%v' is unmanaged and cannot be looked up", domain)
+	}
+
+	return eTLD, err
+}
+
+func lookupTLDserver(tld string) (string, error) {
+	var err error
+	record, err := whois.Whois(tld, iana)
+	if err != nil {
+		return "", err
+	}
+
+	result, err := whoisparser.Parse(record)
+	if err != nil {
+		return "", err
+	}
+
+	server := result.Registrar.WhoisServer
+	return server, err
+}
+
+func daysToExpiry(expiryDate time.Time) (days, hours float64) {
+	now := time.Now()
+
+	days = expiryDate.Sub(now).Hours() / 24
+	hours = math.Mod(expiryDate.Sub(now).Hours(), 24)
+	return
+}
+
 func main() {
 	if len(os.Args) <= 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	record, err := whois.Whois(os.Args[1])
+	domain := os.Args[1]
+	tld, err := tld(domain)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	tldServer, err := lookupTLDserver(tld)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	record, err := whois.Whois(domain, tldServer)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
@@ -77,9 +129,7 @@ func main() {
 
 	if err == nil {
 		expiry, _ := dateparse.ParseAny(result.Registrar.ExpirationDate)
-		now := time.Now()
-		days := expiry.Sub(now).Hours() / 24
-		hours := math.Mod(expiry.Sub(now).Hours(), 24)
+		days, hours := daysToExpiry(expiry)
 
 		fmt.Printf("(%v) %.0f days, %.0f hours\n", expiry, days, hours)
 	}
