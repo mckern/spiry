@@ -131,6 +131,11 @@ func main() {
 		expiry, _ := dateparse.ParseAny(result.Registrar.ExpirationDate)
 		days, hours := daysToExpiry(expiry)
 
+		if days < 0 {
+			fmt.Fprintf(os.Stderr, "domain %q is not registered or has expired\n", domain)
+			os.Exit(1)
+		}
+
 		fmt.Printf("(%v) %.0f days, %.0f hours\n", expiry, days, hours)
 	}
 }
