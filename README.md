@@ -9,8 +9,8 @@ $ spiry --help
 spiry: print number of days until a domain name expires
 
 usage: spiry [-h|-v|-b|-H] <domain>
-  -b, --bare             display the bare expiration date in some mish-mash unix format that might be RFCish?
-  -H, --human-readable   print the human-readable number of days until expiration
+  -b, --bare             display expiration date as ISO8601 timestamp
+  -H, --human-readable   display a human-readable number of days until expiration
   -v, --version          display version information and exit
   -h, --help             display this help and exit
 

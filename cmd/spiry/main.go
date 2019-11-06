@@ -99,11 +99,11 @@ func init() {
 
 	flags.BoolVarP(&bareFlag,
 		"bare", "b", false,
-		"display the bare expiration date in some mish-mash unix format that might be RFCish?")
+		"display expiration date as ISO8601 timestamp")
 
 	flags.BoolVarP(&humanFlag,
 		"human-readable", "H", false,
-		"print the human-readable number of days until expiration")
+		"display a human-readable number of days until expiration")
 
 	flags.BoolVarP(&versionFlag,
 		"version", "v", false,
