@@ -21,22 +21,28 @@ environment variables:
 And the output is straightforward:
 
 ```text
+$ spiry --human-readable "example.it"
+example.it expires in 331 days, 0 hours
 $ spiry --human-readable "example.com"
-example.com expires in 280 days, 19 hours
+example.com expires in 280 days, 4 hours
+$ spiry --human-readable "example.dev"
+ERROR: canonical whois server "whois.nic.google" reports domain "example.dev" as unregistered
+$ spiry --human-readable "example.co.uk"
+example.co.uk expires in -106751 days, -23 hours
+$ spiry "example.com"
+example.com	2020-08-13T04:00:00+0000
 $ spiry "example.dev"
 ERROR: canonical whois server "whois.nic.google" reports domain "example.dev" as unregistered
 $ spiry "example.sh"
 ERROR: canonical whois server "whois.nic.sh" reports domain "example.sh" as unregistered
 $ spiry "example.it"
-example.it	Sat Oct  3 00:00:00 UTC 2020
-$ spiry --bare "example.it"
-Sat Oct  3 00:00:00 UTC 2020
+example.it	2020-10-03T00:00:00+0000
 $ spiry "example.horse"
 ERROR: canonical whois server "whois.nic.horse" reports domain "example.horse" as unregistered
-$ spiry "google.co.uk"
-google.co.uk	Fri Feb 14 00:00:00 UTC 2020
+$ spiry "example.co.uk"
+example.co.uk	0001-01-01T00:00:00+0000
 $ spiry "google.dev"
-google.dev	Sat Jun 13 22:30:20 UTC 2020
+google.dev	2020-06-13T22:30:20+0000
 ```
 
 ## Caveats
