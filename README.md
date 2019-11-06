@@ -1,35 +1,54 @@
 # Spiry
 
-A (trivially) simple domain expiration date checker tool
+A (trivially) simple tool for checking domain expiration dates
 
 ## Usage
 
 ```text
-$ spiry example.com
-(2020-08-13 04:00:00 +0000 UTC) 330 days, 19 hours
-$ spiry google.dev
-(2020-06-13 22:30:20 +0000 UTC) 270 days, 13 hours
-$ spiry example.sh
-(2020-08-13 10:56:01 +0000 UTC) 330 days, 2 hours
-$ spiry example.it
-(2019-10-03 00:00:00 +0000 UTC) 15 days, 15 hours
-$ spiry example.horse
-domain "example.horse" is not registered or has expired
+$ spiry --help
+spiry: print number of days until a domain name expires
+
+usage: spiry [-h|-v|-b|-H] <domain>
+  -b, --bare             display the bare expiration date in some mish-mash unix format that might be RFCish?
+  -H, --human-readable   print the human-readable number of days until expiration
+  -v, --version          display version information and exit
+  -h, --help             display this help and exit
+
+environment variables:
+  SPIRY_DEBUG:   print debug messages
+```
+
+And the output is straightforward:
+
+```text
+$ spiry --human-readable "example.com"
+example.com expires in 280 days, 19 hours
+$ spiry "example.dev"
+ERROR: canonical whois server "whois.nic.google" reports domain "example.dev" as unregistered
+$ spiry "example.sh"
+ERROR: canonical whois server "whois.nic.sh" reports domain "example.sh" as unregistered
+$ spiry "example.it"
+example.it	Sat Oct  3 00:00:00 UTC 2020
+$ spiry --bare "example.it"
+Sat Oct  3 00:00:00 UTC 2020
+$ spiry "example.horse"
+ERROR: canonical whois server "whois.nic.horse" reports domain "example.horse" as unregistered
+$ spiry "google.co.uk"
+google.co.uk	Fri Feb 14 00:00:00 UTC 2020
+$ spiry "google.dev"
+google.dev	Sat Jun 13 22:30:20 UTC 2020
 ```
 
 ## Caveats
 
-- There's no tests for any of the code
+- There's no tests for any of the code **yet**
   - there **is** an initial effort at extracting functionality into a package,
     which should make it easier to write domain resolution test cases.
-- There's basically no tests for domain validity and if they work, they work
 
-  ```text
-  $ spiry example.local
-  domain 'example.local' is unmanaged and cannot be looked up
-  ```
+## Some ideas for future features
 
-- There's no standardized output format (yet)
+- SSL certificate expiry checking
+- user-definable output
 
 ## License
 
