@@ -13,7 +13,7 @@ $(BUILDDIR)/$(NAME):
 	go build \
 	  -o $(BUILDDIR)/$(NAME) \
 	  -ldflags "-s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
-		./...
+		./cmd/...
 
 build: clean $(BUILDDIR)/$(NAME)
 
