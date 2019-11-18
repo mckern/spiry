@@ -2,17 +2,16 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path"
+	"time"
 
 	"github.com/mckern/spiry/internal/console"
 	"github.com/mckern/spiry/internal/spiry"
 
 	"github.com/araddon/dateparse"
-	whois "github.com/likexian/whois-go"
 	flag "github.com/mckern/pflag"
-	whoisparser "github.com/mckern/whois-parser-go"
-	"golang.org/x/net/publicsuffix"
 )
 
 // Basic information about `spiry` itself, and
@@ -29,7 +28,9 @@ var (
 	gitCommit     string
 	versionNumber string
 	whoami        = path.Base(os.Args[0])
+)
 
+var (
 	// and the runtime flags, which kinda-sorta have to be global
 	flags       = flag.NewFlagSet(whoami, flag.ExitOnError)
 	bareFlag    bool
@@ -37,6 +38,13 @@ var (
 	humanFlag   bool
 	versionFlag bool
 )
+
+func humanReadableDate(timestamp time.Time) (days, hours int64) {
+	now := time.Now()
+	days = int64(timestamp.Sub(now).Hours() / 24)
+	hours = int64(math.Mod(timestamp.Sub(now).Hours(), 24))
+	return
+}
 
 func init() {
 	flags.SortFlags = false
@@ -66,6 +74,7 @@ func init() {
 				"  SPIRY_DEBUG:   print debug messages")
 	}
 
+	// parse every argument passed, except the name of the calling program
 	flags.Parse(os.Args[1:])
 
 	// user asked for help
@@ -117,42 +126,33 @@ func init() {
 }
 
 func main() {
-	domain := flags.Arg(0)
-	rootDomain, err := publicsuffix.EffectiveTLDPlusOne(domain)
+	domain := spiry.Domain{Name: flags.Arg(0)}
+
+	rootDomain, err := domain.Root()
 	console.Fatal(err)
 	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", rootDomain, domain))
 
-	tld := spiry.ETLD(rootDomain)
+	tld, err := domain.TLD()
+	console.Fatal(err)
 	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", tld, rootDomain))
 
-	tldServer, err := spiry.LookupTLDserver(tld)
+	tldServer, err := domain.CanonicalWhoisServer()
 	console.Fatal(err)
 	console.Debug(fmt.Sprintf("found canonical whois server %q for eTLD %q\n", tldServer, tld))
 
-	record, err := whois.Whois(rootDomain, tldServer)
+	expiry, err := domain.Expiry()
 	console.Fatal(err)
-	console.Debug(fmt.Sprintf("canonical whois server %q returned a record for root domain %q\n", tldServer, rootDomain))
 
-	// whoisparser does not seem to reliably catch domains that report
-	// as not-found, so we've got to manually look for those
-	if whoisparser.IsNotFound(record) {
-		console.Fatal(fmt.Errorf("canonical whois server %q reports domain %q as unregistered", tldServer, domain))
-	}
+	// default output formatting first
+	output := fmt.Sprintf("%s\t%s", rootDomain, expiry.Format(iso8601))
 
-	result, err := whoisparser.Parse(record)
-	console.Fatal(err)
-	console.Debug(fmt.Sprintf("successfully parsed record for root domain %q\n", rootDomain))
-
-	expiry, _ := dateparse.ParseAny(result.Registrar.ExpirationDate)
-	output := fmt.Sprintf("%s\t%s", domain, expiry.Format(iso8601))
-
+	// refine output formatting if a user requested
+	// something besides the default values
 	if bareFlag {
 		output = expiry.Format(iso8601)
-	}
-
-	if humanFlag {
-		days, hours := spiry.HumanReadableExpiry(expiry)
-		output = fmt.Sprintf("%s expires in %d days, %d hours", domain, days, hours)
+	} else if humanFlag {
+		days, hours := humanReadableDate(expiry)
+		output = fmt.Sprintf("%s expires in %d days, %d hours", rootDomain, days, hours)
 	}
 
 	fmt.Println(output)
