@@ -5,6 +5,8 @@ BUILD_DATE := $(shell date '+%s')
 GIT_COMMIT := $(shell git rev-parse --short HEAD)
 VERSION := $(shell git describe --always --tags --dirty --first-parent)
 
+GIT := $(shell command -v git)
+GO := $(shell command -v go)
 UPX := $(shell command -v upx)
 
 .DEFAULT_TARGET := build
@@ -13,8 +15,10 @@ UPX := $(shell command -v upx)
 $(BUILDDIR)/$(NAME): export CGO_ENABLED = 0
 $(BUILDDIR)/$(NAME):
 	set | grep -E '^(CGO_|GOARCH|GOOS|GOPATH|GOROOT)' \
-	&& go build \
+	&& $(GO) build \
 		-a \
+		-mod=vendor \
+		-trimpath \
 		-buildmode=pie \
 		-ldflags "-s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
 		-o $(BUILDDIR)/$(NAME) \
@@ -25,7 +29,7 @@ build: clean $(BUILDDIR)/$(NAME)
 
 compress: $(BUILDDIR)/$(NAME)
 ifdef UPX
-	upx -9 --keep --no-progress $(BUILDDIR)/$(NAME) && mv $(BUILDDIR)/$(NAME).~ $(BUILDDIR)/$(NAME).orig
+	$(UPX) -9 --keep --no-progress $(BUILDDIR)/$(NAME) && mv $(BUILDDIR)/$(NAME).~ $(BUILDDIR)/$(NAME).orig
 else
 	@echo command "upx" not found, cannot compress binary >&2
 	@exit 1
@@ -36,8 +40,9 @@ clean:
 
 cleaner: clean
 	$(RM) -rv vendor go.sum
+	$(GO) clean -cache -modcache
 
 cleanest: cleaner
-	git clean -fdx
+	$(GIT) clean -fdx
 
 rebuild: clean build
