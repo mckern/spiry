@@ -64,8 +64,15 @@ func init() {
 		"help", "h", false,
 		"display this help and exit")
 
+	// If this program is aliased to a different name, use that in
+	// help output because it's what a user would expect to see.
+	sayMyNameSayMyName := whoami
+	if whoami == name {
+		sayMyNameSayMyName = name
+	}
+
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "%s: print number of days until a domain name expires\n\n", whoami)
+		fmt.Fprintf(flags.Output(), "%s: print number of days until a domain name expires\n\n", sayMyNameSayMyName)
 		fmt.Fprintf(flags.Output(), "usage: %s [-h|-v|-b|-H] <domain>\n", whoami)
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
@@ -74,7 +81,8 @@ func init() {
 	}
 
 	// parse every argument passed, except the name of the calling program
-	flags.Parse(os.Args[1:])
+	err := flags.Parse(os.Args[1:])
+	console.Fatal(err)
 
 	// user asked for help
 	if helpFlag {
@@ -95,7 +103,7 @@ func init() {
 
 		prettyDate, _ := dateparse.ParseAny(buildDate)
 
-		fmt.Printf("%s\t%s\n", whoami, versionNumber)
+		fmt.Printf("%s\t%s\n", name, versionNumber)
 		fmt.Print("Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n")
 		fmt.Print("Web site: https://github.com/mckern/spiry\n")
 		fmt.Print("Build information:\n")
@@ -129,7 +137,7 @@ func main() {
 
 	rootDomain, err := domain.Root()
 	console.Fatal(err)
-	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", rootDomain, domain))
+	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", rootDomain, domain.Name))
 
 	tld, err := domain.TLD()
 	console.Fatal(err)
