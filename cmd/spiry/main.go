@@ -7,11 +7,10 @@ import (
 	"path"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/mckern/spiry/internal/console"
 	"github.com/mckern/spiry/internal/spiry"
-
-	"github.com/araddon/dateparse"
-	flag "github.com/mckern/pflag"
+	flag "github.com/spf13/pflag"
 )
 
 // Basic information about `spiry` itself, and

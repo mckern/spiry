@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
-	whois "github.com/likexian/whois-go"
+	"github.com/likexian/whois-go"
+	whoisparser "github.com/likexian/whois-parser-go"
 	"github.com/mckern/spiry/internal/console"
-	whoisparser "github.com/mckern/whois-parser-go"
 	"golang.org/x/net/publicsuffix"
 )
 
