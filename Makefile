@@ -7,11 +7,13 @@ VERSION := $(shell git describe --always --tags --dirty --first-parent)
 
 GIT := $(shell command -v git)
 GO := $(shell command -v go)
+LINTER := $(shell command -v golangci-lint)
 UPX := $(shell command -v upx)
 
 .DEFAULT_TARGET := build
 .PHONY: build compress
 
+$(BUILDDIR)/$(NAME): lint
 $(BUILDDIR)/$(NAME): export CGO_ENABLED = 0
 $(BUILDDIR)/$(NAME):
 	set | grep -E '^(CGO_|GOARCH|GOOS|GOPATH|GOROOT)' \
@@ -34,6 +36,9 @@ else
 	@echo command "upx" not found, cannot compress binary >&2
 	@exit 1
 endif
+
+lint:
+	$(LINTER) run --fast
 
 clean:
 	$(RM) -v $(BUILDDIR)/$(NAME) $(BUILDDIR)/$(NAME).orig
