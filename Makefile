@@ -11,9 +11,8 @@ LINTER := $(shell command -v golangci-lint)
 UPX := $(shell command -v upx)
 
 .DEFAULT_TARGET := build
-.PHONY: build compress
+.PHONY: build compress lint vendor
 
-$(BUILDDIR)/$(NAME): lint
 $(BUILDDIR)/$(NAME): export CGO_ENABLED = 0
 $(BUILDDIR)/$(NAME):
 	set | grep -E '^(CGO_|GOARCH|GOOS|GOPATH|GOROOT)' \
@@ -27,7 +26,7 @@ $(BUILDDIR)/$(NAME):
 		-trimpath \
 		./cmd/...
 
-build: clean $(BUILDDIR)/$(NAME)
+build: clean vendor lint $(BUILDDIR)/$(NAME)
 
 compress: $(BUILDDIR)/$(NAME)
 ifdef UPX
@@ -39,6 +38,9 @@ endif
 
 lint:
 	$(LINTER) run --fast
+
+vendor:
+	$(GO) mod vendor -v
 
 clean:
 	$(RM) -v $(BUILDDIR)/$(NAME) $(BUILDDIR)/$(NAME).orig
