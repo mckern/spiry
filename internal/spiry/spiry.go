@@ -75,7 +75,7 @@ func (d *Domain) CanonicalWhoisServer() (string, error) {
 				tld, err)
 	}
 
-	d.whoisServer = result.Registrar.WhoisServer
+	d.whoisServer = result.Domain.WhoisServer
 	return d.whoisServer, err
 }
 
@@ -91,14 +91,7 @@ func (d *Domain) Expiry() (ex time.Time, err error) {
 				d.Name, err)
 	}
 
-	addr, err := d.CanonicalWhoisServer()
-	if err != nil {
-		return ex,
-			fmt.Errorf("cannot look up canonical whois server for domain %v: %w",
-				d.Name, err)
-	}
-
-	record, err := whois.Whois(root, addr)
+	record, err := whois.Whois(root)
 	if err != nil {
 		return ex,
 			fmt.Errorf("(expiry) whois request for domain %v failed: %w",
@@ -108,16 +101,17 @@ func (d *Domain) Expiry() (ex time.Time, err error) {
 	// whoisparser does not seem to reliably catch domains that report
 	// as not-found, so we've got to manually look for those
 	if whoisparser.IsNotFound(record) {
-		console.Fatal(fmt.Errorf("canonical whois server %q reports domain %q as unregistered", addr, root))
+		console.Fatal(fmt.Errorf("whois reports domain %q as unregistered", root))
 	}
 
 	result, err := whoisparser.Parse(record)
+
 	if err != nil {
 		return ex,
 			fmt.Errorf("parsing whois record for domain %v failed: %w",
 				root, err)
 	}
 
-	d.expiryDate, _ = dateparse.ParseAny(result.Registrar.ExpirationDate)
+	d.expiryDate, _ = dateparse.ParseAny(result.Domain.ExpirationDate)
 	return d.expiryDate, err
 }
