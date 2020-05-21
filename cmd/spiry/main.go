@@ -35,6 +35,7 @@ var (
 	bareFlag    bool
 	helpFlag    bool
 	humanFlag   bool
+	expiredFlag bool
 	versionFlag bool
 )
 
@@ -55,6 +56,10 @@ func init() {
 	flags.BoolVarP(&humanFlag,
 		"human-readable", "H", false,
 		"display a human-readable number of days until expiration")
+
+	flags.BoolVarP(&expiredFlag,
+		"expired", "e", false,
+		"return false if the domain is already expired")
 
 	flags.BoolVarP(&versionFlag,
 		"version", "v", false,
