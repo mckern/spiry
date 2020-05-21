@@ -112,7 +112,7 @@ func init() {
 		fmt.Printf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
 			"This is free software, and you are welcome to redistribute\n"+
 			"it under certain conditions. See the Parity Public License\n"+
-			"(version 6.0.0) for details.\n", whoami)
+			"(version 7.0.0) for details.\n", whoami)
 
 		os.Exit(0)
 	}
