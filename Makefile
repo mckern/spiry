@@ -20,11 +20,10 @@ $(BUILDDIR)/$(NAME):
 		-a \
 		-mod=vendor \
 		-trimpath \
-		-buildmode=pie \
-		-ldflags "-s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
+		-ldflags "-X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
 		-o $(BUILDDIR)/$(NAME) \
 		-trimpath \
-		./cmd/...
+		./cmd/spiry
 
 build: clean vendor lint $(BUILDDIR)/$(NAME)
 
