@@ -101,7 +101,7 @@ func (d *Domain) Expiry() (ex time.Time, err error) {
 	// whoisparser does not seem to reliably catch domains that report
 	// as not-found, so we've got to manually look for those
 	if whoisparser.IsNotFound(record) {
-		console.Fatal(fmt.Errorf("whois reports domain %q as unregistered", root))
+		console.Fatal(fmt.Errorf("whois reports domain %q as unregistered or expired", root))
 	}
 
 	result, err := whoisparser.Parse(record)
