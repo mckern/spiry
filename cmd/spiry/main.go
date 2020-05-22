@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
+	"time"
 
 	"github.com/araddon/dateparse"
 	"github.com/mckern/spiry/internal/console"
@@ -31,23 +33,38 @@ var (
 
 var (
 	// and the runtime flags, which kinda-sorta have to be global
-	flags       = flag.NewFlagSet(whoami, flag.ExitOnError)
-	bareFlag    bool
-	jsonFlag    bool
-	helpFlag    bool
-	versionFlag bool
+	flags        = flag.NewFlagSet(whoami, flag.ExitOnError)
+	bareFlag     bool
+	jsonFlag     bool
+	unixFlag     bool
+	rfc1123zFlag bool
+	rfc3339Flag  bool
+	helpFlag     bool
+	versionFlag  bool
 )
 
 func init() {
 	flags.SortFlags = false
 
+	flags.BoolVarP(&bareFlag,
+		"bare", "b", false,
+		"only display expiration date")
+
 	flags.BoolVarP(&jsonFlag,
 		"json", "j", false,
 		"display output as JSON")
 
-	flags.BoolVarP(&bareFlag,
-		"bare", "b", false,
-		"display expiration date as ISO8601 timestamp")
+	flags.BoolVarP(&unixFlag,
+		"unix", "u", false,
+		"display expiration date as UNIX time")
+
+	flags.BoolVarP(&rfc1123zFlag,
+		"rfc1123z", "r", false,
+		"display expiration date as RFC1123Z timestamp")
+
+	flags.BoolVarP(&rfc3339Flag,
+		"rfc3339", "R", false,
+		"display expiration date as RFC3339 timestamp")
 
 	flags.BoolVarP(&versionFlag,
 		"version", "v", false,
@@ -66,7 +83,7 @@ func init() {
 
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", sayMyNameSayMyName)
-		fmt.Fprintf(flags.Output(), "usage: %s [-h|-v|-j|-H] <domain>\n", whoami)
+		fmt.Fprintf(flags.Output(), "usage: %s [-h|-v] [-b|-j] [-u|-r|-R] <domain>\n", whoami)
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
 			"\nenvironment variables:\n"+
@@ -79,9 +96,7 @@ func init() {
 
 	// user asked for help
 	if helpFlag {
-		if bareFlag || versionFlag {
-			console.Warn("--help requested, all other flags ignored")
-		}
+		console.Warn("--help requested, all other flags ignored")
 
 		flags.SetOutput(os.Stdout)
 		flags.Usage()
@@ -90,9 +105,7 @@ func init() {
 
 	// user asked for version information
 	if versionFlag {
-		if bareFlag || helpFlag {
-			console.Warn("--version requested, all other flags ignored")
-		}
+		console.Warn("--version requested, all other flags ignored")
 
 		prettyDate, _ := dateparse.ParseAny(buildDate)
 
@@ -143,19 +156,28 @@ func main() {
 	expiry, err := domain.Expiry()
 	console.Fatal(err)
 
+	timeFmt := expiry.Format(ISO8601)
+	if unixFlag {
+		timeFmt = strconv.FormatInt(expiry.Unix(), 10)
+	} else if rfc1123zFlag {
+		timeFmt = expiry.Format(time.RFC1123Z)
+	} else if rfc3339Flag {
+		timeFmt = expiry.Format(time.RFC3339)
+	}
+
 	// default output formatting first
-	output := fmt.Sprintf("%s\t%s", rootDomain, expiry.Format(ISO8601))
+	output := fmt.Sprintf("%s\t%s", rootDomain, timeFmt)
 
 	// refine output formatting if a user requested
 	// something besides the default values
 	if bareFlag {
-		output = expiry.Format(ISO8601)
+		output = timeFmt
 	}
 
 	if jsonFlag {
 		jsonStruct := make(map[string]string)
 		jsonStruct["domain"] = rootDomain
-		jsonStruct["expiry"] = expiry.Format(ISO8601)
+		jsonStruct["expiry"] = timeFmt
 
 		json, err := json.MarshalIndent(jsonStruct, "", "  ")
 		console.Fatal(err)
