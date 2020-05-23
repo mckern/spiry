@@ -83,7 +83,7 @@ func init() {
 
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", sayMyNameSayMyName)
-		fmt.Fprintf(flags.Output(), "usage: %s [-h|-v] [-b|-j] [-u|-r|-R] <domain>\n", whoami)
+		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] <domain>\n", whoami)
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
 			"\nenvironment variables:\n"+
