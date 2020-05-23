@@ -5,14 +5,17 @@ A (trivially) simple tool for checking domain expiration dates
 ## Usage
 
 ```text
-$ spiry --help
-spiry: print number of days until a domain name expires
+$ spiry -h
+spiry: look up domain name expiration
 
-usage: spiry [-h|-v|-b|-H] <domain>
-  -b, --bare             display expiration date as ISO8601 timestamp
-  -H, --human-readable   display a human-readable number of days until expiration
-  -v, --version          display version information and exit
-  -h, --help             display this help and exit
+usage: spiry [-h|-v] [-b|-j] [-u|-r|-R] <domain>
+  -b, --bare       only display expiration date
+  -j, --json       display output as JSON
+  -u, --unix       display expiration date as UNIX time
+  -r, --rfc1123z   display expiration date as RFC1123Z timestamp
+  -R, --rfc3339    display expiration date as RFC3339 timestamp
+  -v, --version    display version information and exit
+  -h, --help       display this help and exit
 
 environment variables:
   SPIRY_DEBUG:   print debug messages
@@ -21,22 +24,24 @@ environment variables:
 And the output is straightforward:
 
 ```text
-$ spiry --human-readable "example.it"
-example.it expires in 331 days, 0 hours
-$ spiry --human-readable "example.com"
-example.com expires in 280 days, 4 hours
-$ spiry --human-readable "example.dev"
-ERROR: canonical whois server "whois.nic.google" reports domain "example.dev" as unregistered
-$ spiry --human-readable "example.co.uk"
-example.co.uk expires in -106751 days, -23 hours
-$ spiry "example.com"
-example.com	2020-08-13T04:00:00+0000
-$ spiry "example.dev"
-ERROR: canonical whois server "whois.nic.google" reports domain "example.dev" as unregistered
+$ spiry --bare --unix example.it
+1601683200
+$ spiry --bare example.it
+2020-10-03T00:00:00+0000
+$ spiry --json mckern.sh
+{
+  "domain": "mckern.sh",
+  "expiry": "2020-09-25T19:30:27+0000"
+}
+$ spiry --json --rfc3339 mckern.dev
+{
+  "domain": "mckern.dev",
+  "expiry": "2021-02-28T16:00:11Z"
+}
+$ spiry github.com
+github.com	2020-10-09T18:20:50+0000
 $ spiry "example.sh"
 ERROR: canonical whois server "whois.nic.sh" reports domain "example.sh" as unregistered
-$ spiry "example.it"
-example.it	2020-10-03T00:00:00+0000
 $ spiry "example.horse"
 ERROR: canonical whois server "whois.nic.horse" reports domain "example.horse" as unregistered
 $ spiry "example.co.uk"
