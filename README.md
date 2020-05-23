@@ -63,4 +63,4 @@ google.dev	2020-06-13T22:30:20+0000
 
 ## License
 
-`spiry` is licensed under the terms of The Parity Public License, version 6.0.0.
+`spiry` is licensed under the terms of [The Parity Public License](https://github.com/mckern/spiry/blob/af49ce3c641796d700d2269d46ada24bcfb7c33b/LICENSE.md), version 7.0.0.
