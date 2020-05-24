@@ -130,6 +130,13 @@ func init() {
 		os.Exit(1)
 	}
 
+	// too few arguments passed
+	if len(flags.Args()) < 1 {
+		fmt.Fprintf(os.Stderr, "ERROR: too few arguments; domain name required\n\n")
+		flags.Usage()
+		os.Exit(1)
+	}
+
 	// mutually exclusive output flags used
 	if bareFlag && jsonFlag {
 		fmt.Fprintf(os.Stderr, "ERROR: cannot use --bare and --json together\n\n")
