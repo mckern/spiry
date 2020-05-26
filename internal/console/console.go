@@ -20,6 +20,10 @@ func Warn(msg string) {
 	}
 }
 
+func Error(msg string) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", strings.Trim(msg, "\n"))
+}
+
 func Fatal(err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())

@@ -18,6 +18,7 @@ import (
 // the canonical root-level whois address FOR THE WORLD
 const (
 	name = "spiry"
+	url  = "https://github.com/mckern/spiry"
 	// ISO8601 is not one of Go's built-in formats :(
 	ISO8601 = "2006-01-02T15:04:05-0700"
 )
@@ -42,6 +43,24 @@ var (
 	helpFlag     bool
 	versionFlag  bool
 )
+
+// Fprint formats using the default formats for its operands and writes to w.
+// Spaces are added between operands when neither is a string.
+// It returns the number of bytes written and any write error encountered.
+
+// flagsAreMutuallyExclusive takes any number of booleans and returns
+// true if 0 or 1 of them are true; otherwise it returns false.
+func flagsAreMutuallyExclusive(f ...bool) bool {
+	counter := 0
+	for _, flagValue := range f {
+		if flagValue {
+			if counter += 1; counter > 1 {
+				return false
+			}
+		}
+	}
+	return true
+}
 
 func init() {
 	flags.SortFlags = false
@@ -74,16 +93,11 @@ func init() {
 		"help", "h", false,
 		"display this help and exit")
 
-	// If this program is aliased to a different name, use that in
-	// help output because it's what a user would expect to see.
-	sayMyNameSayMyName := whoami
-	if whoami == name {
-		sayMyNameSayMyName = name
-	}
-
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", sayMyNameSayMyName)
-		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] <domain>\n", whoami)
+		// If this program is aliased to a different name, use that in
+		// help output because it's what a user would expect to see.
+		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", flags.Name())
+		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] <domain>\n", flags.Name())
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
 			"\nenvironment variables:\n"+
@@ -94,7 +108,8 @@ func init() {
 	err := flags.Parse(os.Args[1:])
 	console.Fatal(err)
 
-	// user asked for help
+	// user asked for help; give them what
+	// they asked for and exit successfully
 	if helpFlag {
 		console.Warn("--help requested, all other flags ignored")
 
@@ -103,7 +118,8 @@ func init() {
 		os.Exit(0)
 	}
 
-	// user asked for version information
+	// user asked for version information; give them what
+	// they asked for and exit successfully
 	if versionFlag {
 		console.Warn("--version requested, all other flags ignored")
 
@@ -111,35 +127,51 @@ func init() {
 
 		fmt.Printf("%s\t%s\n", name, versionNumber)
 		fmt.Print("Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n")
-		fmt.Print("Web site: https://github.com/mckern/spiry\n")
+		fmt.Printf("Web site: %s\n", url)
 		fmt.Print("Build information:\n")
 		fmt.Printf("    git commit ref: %s\n", gitCommit)
 		fmt.Printf("    build date:     %s\n", prettyDate.Format(ISO8601))
 		fmt.Printf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
 			"This is free software, and you are welcome to redistribute\n"+
 			"it under certain conditions. See the Parity Public License\n"+
-			"(version 7.0.0) for details.\n", whoami)
+			"(version 7.0.0) for details.\n", name)
 
 		os.Exit(0)
 	}
 
+	// initialize an error collector, so we can display all error
+	// output and save users the hassle of rerunning multiple times,
+	// one error message at a time
+	var errors []string
+
+	// mutually exclusive output flags used
+	if !flagsAreMutuallyExclusive(bareFlag, jsonFlag) {
+		errors = append(errors, "cannot use --bare and --json together")
+	}
+
+	if !flagsAreMutuallyExclusive(rfc1123zFlag, rfc3339Flag, unixFlag) {
+		errors = append(errors, "cannot use --rfc1123z, --rfc3339, and --unix together")
+	}
+
 	// too many arguments passed
 	if len(flags.Args()) > 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: too many arguments\n\n")
-		flags.Usage()
-		os.Exit(1)
+		errors = append(errors, "too many arguments")
 	}
 
 	// too few arguments passed
 	if len(flags.Args()) < 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: too few arguments; domain name required\n\n")
-		flags.Usage()
-		os.Exit(1)
+		errors = append(errors, "too few arguments; domain name required")
 	}
 
-	// mutually exclusive output flags used
-	if bareFlag && jsonFlag {
-		fmt.Fprintf(os.Stderr, "ERROR: cannot use --bare and --json together\n\n")
+	// check our error collection and if there's anything
+	// in there, print it, display Usage(), and exit 1
+	if len(errors) > 0 {
+		for _, programError := range errors {
+			console.Error(programError)
+		}
+
+		fmt.Fprintln(os.Stderr)
+
 		flags.Usage()
 		os.Exit(1)
 	}
