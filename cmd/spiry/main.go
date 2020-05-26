@@ -28,13 +28,11 @@ var (
 	buildDate     string
 	gitCommit     string
 	versionNumber string
-	whoami        = path.Base(os.Args[0])
-	// formats      map[string]string
 )
 
 var (
 	// and the runtime flags, which kinda-sorta have to be global
-	flags        = flag.NewFlagSet(whoami, flag.ExitOnError)
+	flags        = flag.NewFlagSet(path.Base(os.Args[0]), flag.ExitOnError)
 	bareFlag     bool
 	jsonFlag     bool
 	unixFlag     bool
@@ -195,6 +193,7 @@ func main() {
 	expiry, err := domain.Expiry()
 	console.Fatal(err)
 
+	// define a default time format
 	timeFmt := expiry.Format(ISO8601)
 	if unixFlag {
 		timeFmt = strconv.FormatInt(expiry.Unix(), 10)
@@ -204,16 +203,14 @@ func main() {
 		timeFmt = expiry.Format(time.RFC3339)
 	}
 
-	// default output formatting first
+	// define a default output formatting
 	output := fmt.Sprintf("%s\t%s", rootDomain, timeFmt)
 
-	// refine output formatting if a user requested
+	// redefine output formatting if a user requested
 	// something besides the default values
 	if bareFlag {
 		output = timeFmt
-	}
-
-	if jsonFlag {
+	} else if jsonFlag {
 		jsonStruct := make(map[string]string)
 		jsonStruct["domain"] = rootDomain
 		jsonStruct["expiry"] = timeFmt
@@ -224,5 +221,6 @@ func main() {
 		output = string(json)
 	}
 
+	// print constructed output, because we're done
 	fmt.Println(output)
 }
