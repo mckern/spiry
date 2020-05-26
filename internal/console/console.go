@@ -20,13 +20,20 @@ func Warn(msg string) {
 	}
 }
 
-func Error(msg string) {
-	fmt.Fprintf(os.Stderr, "ERROR: %s\n", strings.Trim(msg, "\n"))
-}
-
-func Fatal(err error) {
+func Error(err error, fs ...func()) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
-		os.Exit(1)
+
+		// call any funcs passed along with the error
+		for _, f := range fs {
+			f()
+		}
+	}
+}
+
+func Fatal(err error, fs ...func()) {
+	fs = append(fs, func() { os.Exit(1) })
+	if err != nil {
+		Error(err, fs...)
 	}
 }
