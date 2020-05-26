@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -32,7 +33,7 @@ var (
 
 var (
 	// and the runtime flags, which kinda-sorta have to be global
-	flags        = flag.NewFlagSet(path.Base(os.Args[0]), flag.ExitOnError)
+	flags        = flag.NewFlagSet(path.Base(os.Args[0]), flag.ContinueOnError)
 	bareFlag     bool
 	jsonFlag     bool
 	unixFlag     bool
@@ -102,9 +103,16 @@ func init() {
 				"  SPIRY_DEBUG:   print debug messages")
 	}
 
+	// initialize an error collector, so we can display all error
+	// output and save users the hassle of rerunning multiple times,
+	// one error message at a time
+	var errMsgs []string
+
 	// parse every argument passed, except the name of the calling program
 	err := flags.Parse(os.Args[1:])
-	console.Fatal(err)
+	console.Fatal(err, func() {
+		console.Error(errors.New("failed to parse unknown flags, cowardly aborting"))
+	})
 
 	// user asked for help; give them what
 	// they asked for and exit successfully
@@ -137,39 +145,30 @@ func init() {
 		os.Exit(0)
 	}
 
-	// initialize an error collector, so we can display all error
-	// output and save users the hassle of rerunning multiple times,
-	// one error message at a time
-	var errors []string
-
 	// mutually exclusive output flags used
 	if !flagsAreMutuallyExclusive(bareFlag, jsonFlag) {
-		errors = append(errors, "cannot use --bare and --json together")
+		errMsgs = append(errMsgs, "cannot use --bare and --json together")
 	}
 
 	if !flagsAreMutuallyExclusive(rfc1123zFlag, rfc3339Flag, unixFlag) {
-		errors = append(errors, "cannot use --rfc1123z, --rfc3339, and --unix together")
+		errMsgs = append(errMsgs, "cannot use --rfc1123z, --rfc3339, and --unix together")
 	}
 
-	// too many arguments passed
-	if len(flags.Args()) > 1 {
-		errors = append(errors, "too many arguments")
-	}
-
-	// too few arguments passed
-	if len(flags.Args()) < 1 {
-		errors = append(errors, "too few arguments; domain name required")
+	if len(flags.Args()) > 1 { // too many arguments passed
+		errMsgs = append(errMsgs, "too many arguments")
+	} else if len(flags.Args()) < 0 { // too few arguments passed
+		errMsgs = append(errMsgs, "too few arguments; domain name required")
+		console.Warn(fmt.Sprintf("%v", errMsgs))
 	}
 
 	// check our error collection and if there's anything
 	// in there, print it, display Usage(), and exit 1
-	if len(errors) > 0 {
-		for _, programError := range errors {
-			console.Error(programError)
+	if len(errMsgs) > 0 {
+		for _, errMsg := range errMsgs {
+			console.Error(errors.New(errMsg))
 		}
-
+		// print a newline on stderr for some whitespace
 		fmt.Fprintln(os.Stderr)
-
 		flags.Usage()
 		os.Exit(1)
 	}
