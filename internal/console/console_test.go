@@ -25,17 +25,17 @@ func captureOutput(f func()) string {
 }
 
 func enableDebugging(f func()) {
-	original_value := os.Getenv("SPIRY_DEBUG")
-	os.Setenv("SPIRY_DEBUG", "true")
+	originalValue := os.Getenv("SPIRY_DEBUG")
+	_ = os.Setenv("SPIRY_DEBUG", "true")
 	f()
-	os.Setenv("SPIRY_DEBUG", original_value)
+	os.Setenv("SPIRY_DEBUG", originalValue)
 }
 
 func disableDebugging(f func()) {
-	original_value := os.Getenv("SPIRY_DEBUG")
+	originalValue := os.Getenv("SPIRY_DEBUG")
 	os.Unsetenv("SPIRY_DEBUG")
 	f()
-	os.Setenv("SPIRY_DEBUG", original_value)
+	os.Setenv("SPIRY_DEBUG", originalValue)
 }
 
 var consoleOutputTests = []struct {
