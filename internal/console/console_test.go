@@ -1,20 +1,17 @@
 package console
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 )
-
-// trim whitespace off the output,
-// to get rid of that trailing newline
-// func captureStdout(f func()) string {
-// 	return strings.TrimSpace(capturer.CaptureStdout(f))
-// }
 
 func captureStderr(f func()) string {
 	return strings.TrimSpace(capturer.CaptureStderr(f))
@@ -47,7 +44,20 @@ var consoleOutputTests = []struct {
 	{Warn, "electric can opener", "WARN"},
 }
 
-func TestConsoleOutputs(t *testing.T) {
+func TestRegularConsoleOutputs(t *testing.T) {
+	for _, tcb := range consoleOutputTests {
+		// We expect to see no output at all on stdin or stdout for
+		// these functions without debugging enabled so we explicitly
+		// disable debugging regardless of what we inherited from
+		// our running environment
+		disableDebugging(func() {
+			out := captureOutput(func() { tcb.name(tcb.msg) })
+			assert.Empty(t, out, "should contain no output from stdin or stderr")
+		})
+	}
+}
+
+func TestDebugConsoleOutputs(t *testing.T) {
 	for _, tcb := range consoleOutputTests {
 		// these functions won't print output unless debugging
 		// is enabled; so we mangle the environment briefly to
@@ -59,12 +69,56 @@ func TestConsoleOutputs(t *testing.T) {
 			assert.Contains(t, out, tcb.msg,
 				fmt.Sprintf(`should contain the message "%s" in output`, tcb.msg))
 		})
-
-		// We expect to see no output at all on stdin or stdout for
-		// these functions without debugging enabled
-		disableDebugging(func() {
-			out := captureOutput(func() { tcb.name(tcb.msg) })
-			assert.Empty(t, out, "should contain no output from stdin or stderr")
-		})
 	}
+}
+
+func TestErrorConsoleOutput(t *testing.T) {
+	msg := "electric slicing knife"
+	logLevel := "ERROR"
+
+	// define some arbitrary message, in this case the execution
+	// time of this particular test when it's run
+	d := time.Now().Format("3:04PM")
+
+	// define a semi-anonymous function, which will be appended
+	// to a call to console.Error()
+	f := func() { Error(fmt.Errorf("called appended func at %s", d)) }
+
+	// call console.Error with the function appended, and then
+	// check that the function actually ran by validating that
+	// the output contains the timestamp (d) we expected to see
+	stderr := captureStderr(func() { Error(errors.New(msg), f) })
+
+	assert.Contains(t, stderr, d,
+		fmt.Sprintf("should contain the date '%s' in output", d))
+	assert.Contains(t, stderr, logLevel,
+		fmt.Sprintf("should contain the log level '%s' in output", logLevel))
+	assert.Contains(t, stderr, msg,
+		"should contain the message '%s' in output", msg)
+}
+
+func TestFatalConsoleOutput(t *testing.T) {
+	msg := "electric martini mixer"
+	logLevel := "ERROR"
+
+	// this is the test program that will be compiled and
+	// run if the env. var. TEST_SUBSHELL is not set
+	if os.Getenv("TEST_SUBSHELL") == "true" {
+		Fatal(errors.New(msg))
+		return
+	}
+
+	// invoke this test in a subshell, passing an environment
+	// variable indicating that the test should run the stubbed
+	// code above instead of evaluating the assertions below
+	cmd := exec.Command(os.Args[0], "-test.run=TestFatalConsoleOutput", "1>/dev/null")
+	cmd.Env = append(os.Environ(), "TEST_SUBSHELL=true")
+	stderr, exitCode := cmd.CombinedOutput()
+
+	assert.Contains(t, string(stderr), logLevel,
+		fmt.Sprintf("should contain the log level '%s' in output", logLevel))
+	assert.Error(t, exitCode,
+		"should cause program to exit with an error code")
+	assert.Contains(t, string(stderr), msg,
+		"should contain the message '%s' in output", msg)
 }
