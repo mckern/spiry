@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	fmt "fmt"
 	"os"
 	"path"
 	"strconv"
@@ -214,10 +214,10 @@ func main() {
 		jsonStruct["domain"] = rootDomain
 		jsonStruct["expiry"] = timeFmt
 
-		json, err := json.MarshalIndent(jsonStruct, "", "  ")
+		jsonOut, err := json.MarshalIndent(jsonStruct, "", "  ")
 		console.Fatal(err)
 
-		output = string(json)
+		output = string(jsonOut)
 	}
 
 	// print constructed output, because we're done
