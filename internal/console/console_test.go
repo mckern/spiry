@@ -1,4 +1,4 @@
-package console
+package console_test
 
 import (
 	"errors"
@@ -11,6 +11,9 @@ import (
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
+
+	// import console to test it
+	"github.com/mckern/spiry/internal/console"
 )
 
 func captureStderr(f func()) string {
@@ -40,8 +43,8 @@ var consoleOutputTests = []struct {
 	msg   string         // message to feed it
 	level string         // log level to expect it to emit
 }{
-	{Debug, "electric kettle", "DEBUG"},
-	{Warn, "electric can opener", "WARN"},
+	{console.Debug, "electric kettle", "DEBUG"},
+	{console.Warn, "electric can opener", "WARN"},
 }
 
 func TestRegularConsoleOutputs(t *testing.T) {
@@ -82,12 +85,12 @@ func TestErrorConsoleOutput(t *testing.T) {
 
 	// define a semi-anonymous function, which will be appended
 	// to a call to console.Error()
-	f := func() { Error(fmt.Errorf("called appended func at %s", d)) }
+	f := func() { console.Error(fmt.Errorf("called appended func at %s", d)) }
 
 	// call console.Error with the function appended, and then
 	// check that the function actually ran by validating that
 	// the output contains the timestamp (d) we expected to see
-	stderr := captureStderr(func() { Error(errors.New(msg), f) })
+	stderr := captureStderr(func() { console.Error(errors.New(msg), f) })
 
 	assert.Contains(t, stderr, d,
 		fmt.Sprintf("should contain the date '%s' in output", d))
@@ -104,7 +107,7 @@ func TestFatalConsoleOutput(t *testing.T) {
 	// this is the test program that will be compiled and
 	// run if the env. var. TEST_SUBSHELL is not set
 	if os.Getenv("TEST_SUBSHELL") == "true" {
-		Fatal(errors.New(msg))
+		console.Fatal(errors.New(msg))
 		return
 	}
 
