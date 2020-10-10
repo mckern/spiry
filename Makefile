@@ -11,7 +11,7 @@ LINTER := $(shell command -v golangci-lint)
 UPX := $(shell command -v upx)
 
 .DEFAULT_TARGET := build
-.PHONY: build compress lint vendor
+.PHONY: build compress test lint vendor
 
 $(BUILDDIR)/$(NAME): export CGO_ENABLED = 0
 $(BUILDDIR)/$(NAME):
@@ -34,6 +34,9 @@ else
 	@echo command "upx" not found, cannot compress binary >&2
 	@exit 1
 endif
+
+test:
+	go test ./...
 
 lint:
 	$(LINTER) run --fast
