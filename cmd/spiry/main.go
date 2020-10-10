@@ -43,10 +43,6 @@ var (
 	versionFlag  bool
 )
 
-// Fprint formats using the default formats for its operands and writes to w.
-// Spaces are added between operands when neither is a string.
-// It returns the number of bytes written and any write error encountered.
-
 // flagsAreMutuallyExclusive takes any number of booleans and returns
 // true if 0 or 1 of them are true; otherwise it returns false.
 func flagsAreMutuallyExclusive(f ...bool) bool {
@@ -179,15 +175,6 @@ func main() {
 
 	rootDomain, err := domain.Root()
 	console.Fatal(err)
-	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", rootDomain, domain.Name))
-
-	tld, err := domain.TLD()
-	console.Fatal(err)
-	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", tld, rootDomain))
-
-	tldServer, err := domain.CanonicalWhoisServer()
-	console.Fatal(err)
-	console.Debug(fmt.Sprintf("found canonical whois server %q for eTLD %q\n", tldServer, tld))
 
 	expiry, err := domain.Expiry()
 	console.Fatal(err)

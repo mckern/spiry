@@ -21,11 +21,16 @@ type Domain struct {
 	expiryDate  time.Time
 }
 
+// Root will return the root domain of a given domain.
+// It returns a String if successful, otherwise it will
+// return an empty string and any errors encountered.
 func (d *Domain) Root() (string, error) {
 	root, err := publicsuffix.EffectiveTLDPlusOne(d.Name)
 	if err != nil {
 		return "", err
 	}
+
+	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", root, d.Name))
 	return root, err
 }
 
@@ -46,6 +51,7 @@ func (d *Domain) TLD() (string, error) {
 				root)
 	}
 
+	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", etld, d.Name))
 	return etld, err
 }
 
@@ -76,6 +82,7 @@ func (d *Domain) CanonicalWhoisServer() (string, error) {
 	}
 
 	d.whoisServer = result.Domain.WhoisServer
+	console.Debug(fmt.Sprintf("found canonical whois server %q for eTLD %q\n", d.whoisServer, tld))
 	return d.whoisServer, err
 }
 
