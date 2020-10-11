@@ -21,9 +21,10 @@ type Domain struct {
 	expiryDate  time.Time
 }
 
-// Root will return the root domain of a given domain.
+// Root returns the root domain (example.com, example.net, etc.) of a
+// given fully-qualified domain name.
 // It returns a String if successful, otherwise it will
-// return an empty string and any errors encountered.
+// return an empty String and any errors encountered.
 func (d *Domain) Root() (string, error) {
 	root, err := publicsuffix.EffectiveTLDPlusOne(d.Name)
 	if err != nil {
@@ -34,6 +35,11 @@ func (d *Domain) Root() (string, error) {
 	return root, err
 }
 
+// TLD returns the top-level domain (.com, .net, etc.) of a
+// given fully-qualified domain name according to the canonical
+// list maintained at https://publicsuffix.org/.
+// It returns a String if successfull, otherwise it will
+// return an empty String and any errors encountered.
 func (d *Domain) TLD() (string, error) {
 	root, err := d.Root()
 	if err != nil {
@@ -55,6 +61,10 @@ func (d *Domain) TLD() (string, error) {
 	return etld, err
 }
 
+// CanonicalWhoisServer returns the canonical whois server of a
+// given fully-qualified domain name according to public DNS records.
+// It returns a String if successfull, otherwise it will
+// return an empty String and any errors encountered.
 func (d *Domain) CanonicalWhoisServer() (string, error) {
 	if len(d.whoisServer) != 0 {
 		return d.whoisServer, nil
@@ -86,6 +96,10 @@ func (d *Domain) CanonicalWhoisServer() (string, error) {
 	return d.whoisServer, err
 }
 
+// Expiry returns the expiration date of a given fully-qualified
+// domain name according to public DNS records.
+// It returns a time.Time value if successfull, otherwise it will
+// return any errors encountered.
 func (d *Domain) Expiry() (ex time.Time, err error) {
 	if !d.expiryDate.IsZero() {
 		return d.expiryDate, nil
