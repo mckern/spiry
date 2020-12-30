@@ -9,5 +9,7 @@ require (
 	github.com/likexian/whois-parser-go v1.15.1
 	github.com/spf13/pflag v1.0.6-0.20200504143853-81378bbcd8a1
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/net v0.0.0-20201009032441-dbdefad45b89
+	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
 )
+
+replace github.com/likexian/whois-go => github.com/mckern/whois-go v1.7.3-0.20201012091136-649862109e2d

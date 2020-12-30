@@ -1,31 +1,33 @@
-package spiry
+package domain
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/araddon/dateparse"
-	"github.com/likexian/whois-go"
+	whois "github.com/likexian/whois-go"
 	whoisparser "github.com/likexian/whois-parser-go"
 	"github.com/mckern/spiry/internal/console"
 	"golang.org/x/net/publicsuffix"
 )
 
-const (
-	iana = "whois.iana.org"
-)
+// const iana = "whois.iana.org"
 
-type Domain struct {
+type domain struct {
 	Name        string
-	whoisServer string
+	WhoisServer string
 	expiryDate  time.Time
+}
+
+func New(name string) *domain {
+	return &domain{Name: name}
 }
 
 // Root returns the root domain (example.com, example.net, etc.) of a
 // given fully-qualified domain name.
 // It returns a String if successful, otherwise it will
 // return an empty String and any errors encountered.
-func (d *Domain) Root() (string, error) {
+func (d *domain) Root() (string, error) {
 	root, err := publicsuffix.EffectiveTLDPlusOne(d.Name)
 	if err != nil {
 		return "", err
@@ -36,11 +38,11 @@ func (d *Domain) Root() (string, error) {
 }
 
 // TLD returns the top-level domain (.com, .net, etc.) of a
-// given fully-qualified domain name according to the canonical
+// given fully-qualified domain name according to the semi-canonical
 // list maintained at https://publicsuffix.org/.
 // It returns a String if successfull, otherwise it will
 // return an empty String and any errors encountered.
-func (d *Domain) TLD() (string, error) {
+func (d *domain) TLD() (string, error) {
 	root, err := d.Root()
 	if err != nil {
 		return "",
@@ -61,50 +63,25 @@ func (d *Domain) TLD() (string, error) {
 	return etld, err
 }
 
-// CanonicalWhoisServer returns the canonical whois server of a
-// given fully-qualified domain name according to public DNS records.
-// It returns a String if successfull, otherwise it will
-// return an empty String and any errors encountered.
-func (d *Domain) CanonicalWhoisServer() (string, error) {
-	if len(d.whoisServer) != 0 {
-		return d.whoisServer, nil
-	}
-
-	tld, err := d.TLD()
-	if err != nil {
-		return "",
-			fmt.Errorf("unable to look up canonical whois server for domain %v: %w",
-				d.Name, err)
-	}
-
-	record, err := whois.Whois(tld, iana)
-	if err != nil {
-		return "",
-			fmt.Errorf("(whoisServer) whois request for domain %q failed: %w",
-				tld, err)
-	}
-
-	result, err := whoisparser.Parse(record)
-	if err != nil {
-		return "",
-			fmt.Errorf("parsing whois record for domain %v failed: %w",
-				tld, err)
-	}
-
-	d.whoisServer = result.Domain.WhoisServer
-	console.Debug(fmt.Sprintf("found canonical whois server %q for eTLD %q\n", d.whoisServer, tld))
-	return d.whoisServer, err
-}
-
 // Expiry returns the expiration date of a given fully-qualified
 // domain name according to public DNS records.
 // It returns a time.Time value if successfull, otherwise it will
 // return any errors encountered.
-func (d *Domain) Expiry() (ex time.Time, err error) {
+func (d *domain) Expiry() (ex time.Time, err error) {
 	if !d.expiryDate.IsZero() {
 		return d.expiryDate, nil
 	}
 
+	// ensure this is not a private or invalid domain
+	_, err = d.TLD()
+	if err != nil {
+		return ex,
+			fmt.Errorf("unable to find eTLD for domain %v: %w",
+				d.Name, err)
+	}
+
+	// derive root of domain, so we aren't trying to
+	// query subdomains
 	root, err := d.Root()
 	if err != nil {
 		return ex,
@@ -112,7 +89,8 @@ func (d *Domain) Expiry() (ex time.Time, err error) {
 				d.Name, err)
 	}
 
-	record, err := whois.Whois(root)
+	// query for whois data
+	record, err := whois.Whois(root, d.WhoisServer)
 	if err != nil {
 		return ex,
 			fmt.Errorf("(expiry) whois request for domain %v failed: %w",
