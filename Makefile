@@ -25,7 +25,7 @@ $(BUILDDIR)/$(NAME):
 		-trimpath \
 		./cmd/spiry
 
-build: clean vendor lint $(BUILDDIR)/$(NAME)
+build: $(BUILDDIR)/$(NAME)
 
 compress: $(BUILDDIR)/$(NAME)
 ifdef UPX
@@ -38,18 +38,27 @@ endif
 test:
 	go test ./...
 
+privileged-tests: clean vendor
+	@docker run \
+		--env="CGO_ENABLED=0" \
+		--mount "type=bind,source="${PWD}",target=/app" \
+		--workdir="/app" \
+		--rm \
+		golang:1.16-alpine \
+		/bin/sh -c 'go test ./...'
+
 lint:
-	$(LINTER) run --fast
+	@$(LINTER) run --fast
 
 vendor:
-	$(GO) mod vendor -v
+	@$(GO) mod vendor
 
 clean:
-	$(RM) -v $(BUILDDIR)/$(NAME) $(BUILDDIR)/$(NAME).orig
+	@$(RM) -v $(BUILDDIR)/$(NAME) $(BUILDDIR)/$(NAME).orig
 
 cleaner: clean
-	$(RM) -rv vendor go.sum
-	$(GO) clean -cache -modcache
+	@$(RM) -rv vendor go.sum
+	@$(GO) clean -cache -modcache
 
 cleanest: cleaner
 	$(GIT) clean -fdx
