@@ -11,7 +11,7 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/mckern/spiry/internal/console"
-	"github.com/mckern/spiry/internal/spiry"
+	"github.com/mckern/spiry/internal/domain"
 	flag "github.com/spf13/pflag"
 )
 
@@ -34,6 +34,7 @@ var (
 var (
 	// and the runtime flags, which kinda-sorta have to be global
 	flags        = flag.NewFlagSet(path.Base(os.Args[0]), flag.ContinueOnError)
+	serverAddr   string
 	bareFlag     bool
 	jsonFlag     bool
 	unixFlag     bool
@@ -59,6 +60,10 @@ func flagsAreMutuallyExclusive(f ...bool) bool {
 
 func init() {
 	flags.SortFlags = false
+
+	flags.StringVarP(&serverAddr,
+		"server", "s", "whois.iana.org",
+		"use <server> as specific whois server")
 
 	flags.BoolVarP(&bareFlag,
 		"bare", "b", false,
@@ -92,7 +97,7 @@ func init() {
 		// If this program is aliased to a different name, use that in
 		// help output because it's what a user would expect to see.
 		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] <domain>\n", flags.Name())
+		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] [-s <server>] <domain>\n", flags.Name())
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
 			"\nenvironment variables:\n"+
@@ -171,7 +176,8 @@ func init() {
 }
 
 func main() {
-	domain := spiry.Domain{Name: flags.Arg(0)}
+	domain := domain.New(flags.Arg(0))
+	domain.WhoisServer = serverAddr
 
 	rootDomain, err := domain.Root()
 	console.Fatal(err)
