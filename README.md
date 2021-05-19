@@ -2,6 +2,9 @@
 
 A (trivially) simple tool for checking domain expiration dates
 
+# TO DO
+
+Move to Kong https://github.com/alecthomas/kong
 ## Usage
 
 ```text

@@ -2,11 +2,12 @@ package domain
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/araddon/dateparse"
-	whois "github.com/likexian/whois-go"
-	whoisparser "github.com/likexian/whois-parser-go"
+	whois "github.com/likexian/whois"
+	whoisparser "github.com/likexian/whois-parser"
 	"github.com/mckern/spiry/internal/console"
 	"golang.org/x/net/publicsuffix"
 )
@@ -97,13 +98,14 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 				root, err)
 	}
 
-	// whoisparser does not seem to reliably catch domains that report
-	// as not-found, so we've got to manually look for those
-	if whoisparser.IsNotFound(record) {
-		console.Fatal(fmt.Errorf("whois reports domain %q as unregistered or expired", root))
-	}
-
 	result, err := whoisparser.Parse(record)
+
+	fmt.Fprintf(os.Stderr, "--> error: %+v\n", err)
+	fmt.Fprintf(os.Stderr, "--> result: %+v\n", result)
+
+	// if whoisparser.IsDomainNotFound(record) {
+	// 	console.Fatal(fmt.Errorf("whois reports domain %q as unregistered or expired", root))
+	// }
 
 	if err != nil {
 		return ex,

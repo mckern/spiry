@@ -36,7 +36,7 @@ func handleConnection(c net.Conn) {
 
 	name := strings.TrimSpace(string(netData))
 
-	log.Printf("reading fake whois data for domain %v\n", name)
+	log.Printf("reading fake whois data for domain %+v\n", name)
 	file, err := os.Open(path.Join("fixtures", name+".whois"))
 	if err != nil {
 		log.Fatal(err)
@@ -101,9 +101,24 @@ func TestDomainExpiry(t *testing.T) {
 	}
 
 	d := domain.New("mckern.sh")
-	d.WhoisServer = localWhoisServer.String()
-	val, _ := d.Expiry()
+	d.WhoisServer = "127.0.0.1"
+	val, err := d.Expiry()
 
-	assert.IsType(t, time.Time{}, val, "an expiration date should be a valid time.Time instance")
-	assert.NotNil(t, val, "a domain should have a real expiration date")
+	assert.Nil(t, err, "a domain record should parse")
+	assert.NotNil(t, val, "a domain should have a defined expiration date")
+	assert.IsType(t, time.Time{}, val, "an expiration date should be a valid (time.Time) instance")
+	assert.False(t, val.IsZero(), "an expiration date should not be the default value")
+}
+
+func TestDomainNotFound(t *testing.T) {
+	if unprivilegedUser() {
+		t.Skip("Skipping testing in unprivileged environment")
+	}
+
+	d := domain.New("no-such-example.com")
+	d.WhoisServer = "127.0.0.1"
+	val, err := d.Expiry()
+
+	assert.NotNil(t, err, "a non-existant domain should fail to parse")
+	assert.True(t, val.IsZero(), "an non-existant expiration date should be the default value")
 }
