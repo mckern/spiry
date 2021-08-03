@@ -5,6 +5,7 @@ name: default
 
 steps:
   - name: run tests
-    image: golang:1.16
+    image: golang:1.16-buster
     commands:
+      - apt update && apt install -y build-essential
       - make test
