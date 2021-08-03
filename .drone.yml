@@ -1,0 +1,10 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: greeting
+  image: golang:1.16
+  commands:
+  - make test
