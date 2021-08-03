@@ -9,3 +9,5 @@ steps:
     commands:
       - apt update && apt install -y build-essential make
       - make test
+    environment:
+      SHELL: /bin/bash
