@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 NAME := spiry
 BUILDDIR := build
 
