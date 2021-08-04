@@ -12,5 +12,9 @@ steps:
     image: golang:1.16
     commands:
       - make test
-    environment:
-      SHELL: /bin/bash
+
+  - name: build artifact
+    image: golang:1.16
+    commands:
+      - apt-get update && apt-get install -y upx-ucl
+      - make build compress
