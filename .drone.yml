@@ -11,7 +11,7 @@ steps:
   - name: run tests
     image: golang:1.16
     commands:
-      - make test
+      - make privileged-tests
 
   - name: build artifact
     image: golang:1.16

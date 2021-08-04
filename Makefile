@@ -16,7 +16,7 @@ UPX := $(shell command -v upx)
 .PHONY: build compress test lint vendor
 
 $(BUILDDIR)/$(NAME): export CGO_ENABLED = 0
-$(BUILDDIR)/$(NAME):
+$(BUILDDIR)/$(NAME): vendor
 	set | grep -E '^(CGO_|GOARCH|GOOS|GOPATH|GOROOT)' \
 	&& $(GO) build \
 		-a \
