@@ -1,12 +1,12 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/araddon/dateparse"
-	whois "github.com/likexian/whois"
+	"github.com/likexian/whois"
 	whoisparser "github.com/likexian/whois-parser"
 	"github.com/mckern/spiry/internal/console"
 	"golang.org/x/net/publicsuffix"
@@ -41,7 +41,7 @@ func (d *domain) Root() (string, error) {
 // TLD returns the top-level domain (.com, .net, etc.) of a
 // given fully-qualified domain name according to the semi-canonical
 // list maintained at https://publicsuffix.org/.
-// It returns a String if successfull, otherwise it will
+// It returns a String if successful, otherwise it will
 // return an empty String and any errors encountered.
 func (d *domain) TLD() (string, error) {
 	root, err := d.Root()
@@ -99,18 +99,16 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 	}
 
 	result, err := whoisparser.Parse(record)
-
-	fmt.Fprintf(os.Stderr, "--> error: %+v\n", err)
-	fmt.Fprintf(os.Stderr, "--> result: %+v\n", result)
-
-	// if whoisparser.IsDomainNotFound(record) {
-	// 	console.Fatal(fmt.Errorf("whois reports domain %q as unregistered or expired", root))
-	// }
-
 	if err != nil {
-		return ex,
-			fmt.Errorf("parsing whois record for domain %v failed: %w",
-				root, err)
+		errorMsg := fmt.Errorf("parsing whois record for domain %v failed: %w", root, err)
+
+		if errors.As(err, &whoisparser.ErrDomainNotFound) {
+			errorMsg = fmt.Errorf("domain record %q not found", root)
+		} else if errors.As(err, &whoisparser.ErrDomainDataInvalid) {
+			errorMsg = fmt.Errorf("whois record %q is invalid", root)
+		}
+
+		return ex, errorMsg
 	}
 
 	d.expiryDate, _ = dateparse.ParseAny(result.Domain.ExpirationDate)

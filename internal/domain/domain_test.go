@@ -97,7 +97,7 @@ func TestDomainRoot(t *testing.T) {
 
 func TestDomainExpiry(t *testing.T) {
 	if unprivilegedUser() {
-		t.Skip("Skipping testing in unprivileged environment")
+		t.Skipf("Skipping testing %q in unprivileged environment", t.Name())
 	}
 
 	d := domain.New("mckern.sh")
@@ -112,7 +112,7 @@ func TestDomainExpiry(t *testing.T) {
 
 func TestDomainNotFound(t *testing.T) {
 	if unprivilegedUser() {
-		t.Skip("Skipping testing in unprivileged environment")
+		t.Skipf("Skipping testing %q in unprivileged environment", t.Name())
 	}
 
 	d := domain.New("no-such-example.com")
