@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	fmt "fmt"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -62,7 +62,7 @@ func init() {
 	flags.SortFlags = false
 
 	flags.StringVarP(&serverAddr,
-		"server", "s", "whois.iana.org",
+		"server", "s", "",
 		"use <server> as specific whois server")
 
 	flags.BoolVarP(&bareFlag,
@@ -157,7 +157,7 @@ func init() {
 
 	if len(flags.Args()) > 1 { // too many arguments passed
 		errMsgs = append(errMsgs, "too many arguments")
-	} else if len(flags.Args()) < 0 { // too few arguments passed
+	} else if len(flags.Args()) == 0 { // too few arguments passed
 		errMsgs = append(errMsgs, "too few arguments; domain name required")
 		console.Warn(fmt.Sprintf("%v", errMsgs))
 	}
