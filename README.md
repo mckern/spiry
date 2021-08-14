@@ -57,7 +57,7 @@ Functionally, `spiry` is "fine" but it's a work in progress and like all moving 
 some of the interfaces and options may change as it grows. Once a proper versioned release is cut,
 this warning will likely be removed.
 
-# TO DO
+## TO DO
 
 - [ ] Move to Kong https://github.com/alecthomas/kong
   - [pflag](https://github.com/spf13/pflag) has been OK but it's showing its age in places
