@@ -10,11 +10,17 @@ platform:
 steps:
   - name: run tests
     image: golang:1.16
+    volumes:
+      - name: deps
+        path: /go
     commands:
       - make test
 
   - name: build artifact
     image: golang:1.16
+    volumes:
+      - name: deps
+        path: /go
     commands:
       - apt-get update && apt-get install -y upx-ucl
       - make build compress
