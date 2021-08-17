@@ -132,17 +132,18 @@ func init() {
 
 		prettyDate, _ := dateparse.ParseAny(buildDate)
 
-		fmt.Printf("%s\t%s\n", name, versionNumber)
-		fmt.Print("Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n")
-		fmt.Printf("Web site: %s\n", url)
-		fmt.Print("Build information:\n")
-		fmt.Printf("    git commit ref: %s\n", gitCommit)
-		fmt.Printf("    build date:     %s\n", prettyDate.Format(ISO8601))
-		fmt.Printf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
+		msg := fmt.Sprintf("%s\t%s\n", name, versionNumber)
+		msg += fmt.Sprintf("Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n")
+		msg += fmt.Sprintf("Web site: %s\n", url)
+		msg += fmt.Sprintf("Build information:\n")
+		msg += fmt.Sprintf("    git commit ref: %s\n", gitCommit)
+		msg += fmt.Sprintf("    build date:     %s\n", prettyDate.Format(ISO8601))
+		msg += fmt.Sprintf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
 			"This is free software, and you are welcome to redistribute\n"+
 			"it under certain conditions. See the Parity Public License\n"+
 			"(version 7.0.0) for details.\n", name)
 
+		fmt.Print(msg)
 		os.Exit(0)
 	}
 
