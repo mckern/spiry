@@ -49,22 +49,50 @@ $ spiry "example.horse"
 ERROR: whois reports domain "example.horse" as unregistered or expired
 ```
 
+### Error handling
+
+Error messages are emitted in plaintext format to standard error. If the errors are generated during flag parsing, the
+help text will be emitted to standard error. WHOIS lookup errors will be emitted to standard error, without the help
+text.
+
+```
+$ ./build/spiry -j -b -u -r example.com 1>/dev/null
+ERROR: cannot use --bare and --json together
+ERROR: cannot use --rfc1123z, --rfc3339, and --unix together
+
+spiry: look up domain name expiration
+
+usage: spiry [-b|-j] [-u|-r|-R] [-h|-v] [-s <server>] <domain>
+  -s, --server string   use <server> as specific whois server
+  -b, --bare            only display expiration date
+  -j, --json            display output as JSON
+  -u, --unix            display expiration date as UNIX time
+  -r, --rfc1123z        display expiration date as RFC1123Z timestamp
+  -R, --rfc3339         display expiration date as RFC3339 timestamp
+  -v, --version         display version information and exit
+  -h, --help            display this help and exit
+
+environment variables:
+  SPIRY_DEBUG:   print debug messages
+$ ./build/spiry no-such-example.com 1>/dev/null
+ERROR: domain record "no-such-example.com" not found
+```
+
 ## Caveats
 
 `spiry` is provided as-is, with no assertions to correctness or completeness at this time.
 
-Functionally, `spiry` is "fine" but it's a work in progress and like all moving targets,
-some of the interfaces and options may change as it grows. Once a proper versioned release is cut,
-this warning will likely be removed.
+Functionally, `spiry` is "fine" but it's a work in progress and like all moving targets, some of the interfaces and
+options may change as it grows. Once a proper versioned release is cut, this warning will likely be removed.
 
 ## TO DO
 
 - [ ] Move to Kong https://github.com/alecthomas/kong
-  - [pflag](https://github.com/spf13/pflag) has been OK but it's showing its age in places
+    - [pflag](https://github.com/spf13/pflag) has been OK but it's showing its age in places
 - [ ] SSL certificate expiry checking
-  - Subcommand support may be easier post-Kong
+    - Subcommand support may be easier post-Kong
 - [ ] User-definable output, `printf` style.
-  - Y'all like writing parsers? Because this will probably require a small parser.
+    - Y'all like writing parsers? Because this will probably require a small parser.
 
 ## License
 
