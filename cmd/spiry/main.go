@@ -58,7 +58,26 @@ func flagsAreMutuallyExclusive(f ...bool) bool {
 	return true
 }
 
+func versionMsg() string {
+	prettyDate, _ := dateparse.ParseAny(buildDate)
+
+	msg := fmt.Sprintf("%s\t%s\n", name, versionNumber)
+	msg += "Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n"
+	msg += fmt.Sprintf("Web site: %s\n", url)
+	msg += "Build information:\n"
+	msg += fmt.Sprintf("    git commit ref: %s\n", gitCommit)
+	msg += fmt.Sprintf("    build date:     %s\n", prettyDate.Format(ISO8601))
+	msg += fmt.Sprintf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
+		"This is free software, and you are welcome to\n"+
+		"redistribute it under certain conditions.\n"+
+		"See the MIT License for details.\n", name)
+
+	return msg
+}
+
 func init() {
+	// flags are explicitly sorted here, and we don't need
+	// pflag sorting them alphabetically on us.
 	flags.SortFlags = false
 
 	flags.StringVarP(&serverAddr,
@@ -96,8 +115,13 @@ func init() {
 	flags.Usage = func() {
 		// If this program is aliased to a different name, use that in
 		// help output because it's what a user would expect to see.
-		fmt.Fprintf(flags.Output(), "%s: look up domain name expiration\n\n", flags.Name())
-		fmt.Fprintf(flags.Output(), "usage: %s [-b|-j] [-u|-r|-R] [-h|-v] [-s <server>] <domain>\n", flags.Name())
+		fmt.Fprintf(flags.Output(),
+			"%s: look up domain name expiration\n\n",
+			flags.Name())
+		fmt.Fprintf(flags.Output(),
+			"usage: %s [-b|-j] [-u|-r|-R] [-h|-v] [-s <server>] <domain>\n",
+			flags.Name())
+
 		flags.PrintDefaults()
 		fmt.Fprintln(flags.Output(),
 			"\nenvironment variables:\n"+
@@ -130,20 +154,7 @@ func init() {
 	if versionFlag {
 		console.Warn("--version requested, all other flags ignored")
 
-		prettyDate, _ := dateparse.ParseAny(buildDate)
-
-		msg := fmt.Sprintf("%s\t%s\n", name, versionNumber)
-		msg += fmt.Sprintf("Copyright (C) 2019 by Ryan McKern <ryan@mckern.sh>\n")
-		msg += fmt.Sprintf("Web site: %s\n", url)
-		msg += fmt.Sprintf("Build information:\n")
-		msg += fmt.Sprintf("    git commit ref: %s\n", gitCommit)
-		msg += fmt.Sprintf("    build date:     %s\n", prettyDate.Format(ISO8601))
-		msg += fmt.Sprintf("\n%s comes with ABSOLUTELY NO WARRANTY.\n"+
-			"This is free software, and you are welcome to redistribute\n"+
-			"it under certain conditions. See the Parity Public License\n"+
-			"(version 7.0.0) for details.\n", name)
-
-		fmt.Print(msg)
+		fmt.Print(versionMsg())
 		os.Exit(0)
 	}
 
