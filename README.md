@@ -68,4 +68,4 @@ this warning will likely be removed.
 
 ## License
 
-`spiry` is licensed under the terms of [The Parity Public License](https://github.com/mckern/spiry/blob/af49ce3c641796d700d2269d46ada24bcfb7c33b/LICENSE.md), version 7.0.0.
+`spiry` is licensed under the terms of the [MIT License](LICENSE.txt).
