@@ -1,14 +1,14 @@
 ---
 kind: pipeline
 type: docker
-name: default
+name: test-linux-amd64
 
 platform:
   os: linux
   arch: amd64
 
 steps:
-  - name: run tests
+  - name: testing
     image: golang:1.16
     volumes:
       - name: deps
@@ -16,11 +16,63 @@ steps:
     commands:
       - make test
 
-  - name: build artifact
+  - name: build-linux-amd64-artifact
+    depends_on:
+      - testing
     image: golang:1.16
     volumes:
-      - name: deps
-        path: /go
+      - name: build
+        path: /drone/src/build
     commands:
-      - apt-get update && apt-get install -y upx-ucl
-      - make build compress
+      - export NAME=spiry-$${GOOS}-$${GOARCH}
+      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - make package NAME=$${NAME}
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+
+  - name: build-darwin-amd64-artifact
+    depends_on:
+      - testing
+    image: golang:1.16
+    volumes:
+      - name: build
+        path: /drone/src/build
+    commands:
+      - export NAME=spiry-$${GOOS}-$${GOARCH}
+      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - make package NAME=$${NAME}
+    environment:
+      GOOS: darwin
+      GOARCH: amd64
+
+  - name: build-linux-arm64-artifact
+    depends_on:
+      - testing
+    image: golang:1.16
+    volumes:
+      - name: build
+        path: /drone/src/build
+    commands:
+      - export NAME=spiry-$${GOOS}-$${GOARCH}
+      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - make package NAME=$${NAME}
+    environment:
+      GOOS: linux
+      GOARCH: arm
+      GOARM: 7
+
+  - name: build-darwin-arm64-artifact
+    depends_on:
+      - testing
+    image: golang:1.16
+    volumes:
+      - name: build
+        path: /drone/src/build
+    commands:
+      - export NAME=spiry-$${GOOS}-$${GOARCH}
+      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - make package NAME=$${NAME}
+    environment:
+      GOOS: darwin
+      GOARCH: arm64

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-NAME := spiry
+NAME = spiry
 BUILDDIR := build
 
 GIT := $(shell command -v git)
@@ -20,7 +20,7 @@ UPX := $(shell command -v upx)
 .PHONY: build compress test lint vendor
 
 $(BUILDDIR)/$(NAME): vendor
-	@$(GO) build \
+	$(GO) build \
 		-a \
 		-mod=vendor \
 		-trimpath \
@@ -39,12 +39,15 @@ else
 	@exit 1
 endif
 
+package: compress
+	@tar cf $(BUILDDIR)/$(NAME).tar $(BUILDDIR)/$(NAME)
+
 test:
-	@$(GO) test -v ./...
+	$(GO) test -v ./...
 
 containerized-tests: clean vendor
 ifdef DOCKER
-	@$(DOCKER) run \
+	$(DOCKER) run \
 		--mount "type=bind,source="${PWD}",target=/app" \
 		--env="CGO_ENABLED=0" \
 		--workdir="/app" \
