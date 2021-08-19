@@ -19,7 +19,7 @@ UPX := $(shell command -v upx)
 .DEFAULT_TARGET := $(BUILDDIR)/$(NAME)
 .PHONY: build compress test lint vendor
 
-$(BUILDDIR)/$(NAME): vendor
+$(BUILDDIR)/$(NAME):
 	$(GO) build \
 		-a \
 		-mod=vendor \
@@ -67,6 +67,8 @@ else
 	@exit 1
 endif
 
+tidy:
+	@$(GO) mod tidy
 
 vendor:
 	@$(GO) mod vendor
