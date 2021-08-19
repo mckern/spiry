@@ -16,9 +16,20 @@ steps:
     commands:
       - make test
 
+---
+kind: pipeline
+type: docker
+name: build-linux-amd64
+
+depends_on:
+  - test-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
   - name: build-linux-amd64-artifact
-    depends_on:
-      - testing
     image: golang:1.16
     volumes:
       - name: build
@@ -31,9 +42,20 @@ steps:
       GOOS: linux
       GOARCH: amd64
 
+---
+kind: pipeline
+type: docker
+name: build-darwin-amd64
+
+depends_on:
+  - test-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
   - name: build-darwin-amd64-artifact
-    depends_on:
-      - testing
     image: golang:1.16
     volumes:
       - name: build
@@ -46,9 +68,20 @@ steps:
       GOOS: darwin
       GOARCH: amd64
 
+---
+kind: pipeline
+type: docker
+name: build-linux-armv7
+
+depends_on:
+  - test-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
   - name: build-linux-arm64-artifact
-    depends_on:
-      - testing
     image: golang:1.16
     volumes:
       - name: build
@@ -62,9 +95,20 @@ steps:
       GOARCH: arm
       GOARM: 7
 
+---
+kind: pipeline
+type: docker
+name: build-darwin-arm64
+
+depends_on:
+  - test-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
   - name: build-darwin-arm64-artifact
-    depends_on:
-      - testing
     image: golang:1.16
     volumes:
       - name: build
