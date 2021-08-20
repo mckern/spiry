@@ -33,7 +33,7 @@ steps:
         path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
-      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
       GOOS: linux
@@ -43,7 +43,8 @@ steps:
     image: plugins/s3-cache
     settings:
       pull: true
-      endpoint: http://ambry.home.mckern.sh
+      debug: true
+      endpoint: http://ambry.home.mckern.sh:9001
       root: /packages
       access_key:
         from_secret: aws_access_key_id
@@ -51,7 +52,7 @@ steps:
         from_secret: aws_secret_access_key
       rebuild: true
       mount:
-        - build/*.tar
+        - build
 
 ---
 kind: pipeline
@@ -73,7 +74,7 @@ steps:
         path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
-      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
       GOOS: darwin
@@ -99,7 +100,7 @@ steps:
         path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
-      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
       GOOS: linux
@@ -126,7 +127,7 @@ steps:
         path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
-      - apt-get update && apt-get install -y bzip2 upx-ucl xz-utils
+      - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
       GOOS: darwin
