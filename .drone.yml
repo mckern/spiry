@@ -10,9 +10,6 @@ platform:
 steps:
   - name: testing
     image: golang:1.16
-    volumes:
-      - name: deps
-        path: /go
     commands:
       - make test
 
@@ -41,6 +38,20 @@ steps:
     environment:
       GOOS: linux
       GOARCH: amd64
+
+  - name: flush-to-storage
+    image: plugins/s3-cache
+    settings:
+      pull: true
+      endpoint: http://ambry.home.mckern.sh
+      root: /packages
+      access_key:
+        from_secret: aws_access_key_id
+      secret_key:
+        from_secret: aws_secret_access_key
+      rebuild: true
+      mount:
+        - build/*.tar
 
 ---
 kind: pipeline

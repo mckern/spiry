@@ -40,7 +40,7 @@ else
 endif
 
 package: compress
-	tar cfv $(BUILDDIR)/$(NAME).tar $(BUILDDIR)/$(NAME)
+	tar cfv $(BUILDDIR)/$(NAME)-$(VERSION).tar $(BUILDDIR)/$(NAME)
 	ls -hl $(BUILDDIR)
 
 test:
