@@ -46,7 +46,7 @@ steps:
     pull: true
     commands:
       - aws configure set default.s3.signature_version s3v4
-      - aws --endpoint-url $${AWS_ENDPOINT} s3 cp build/*.tar s3://$${AWS_S3_BUCKET}
+      - aws --endpoint-url http://192.168.1.10:9000 s3 cp build/*.tar s3://$${AWS_S3_BUCKET}
     environment:
       AWS_ACCESS_KEY_ID:
         from_secret: aws_access_key_id
@@ -56,6 +56,7 @@ steps:
         from_secret: aws_endpoint
       AWS_S3_BUCKET:
         from_secret: aws_s3_bucket
+      AWS_DEFAULT_REGION: us-west-1
 
 depends_on:
   - test-linux-amd64
