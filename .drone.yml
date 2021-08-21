@@ -8,10 +8,6 @@ platform:
   arch: amd64
 
 steps:
-  - name: fetch
-    image: docker:git
-    commands:
-      - git fetch --tags
   - name: testing
     image: golang:1.16
     commands:
@@ -27,6 +23,11 @@ platform:
   arch: amd64
 
 steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+
   - name: build-linux-amd64-artifact
     pull: true
     image: golang:1.16
@@ -72,6 +73,11 @@ platform:
   arch: amd64
 
 steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+
   - name: build-darwin-amd64-artifact
     pull: true
     image: golang:1.16
@@ -114,6 +120,11 @@ platform:
   arch: amd64
 
 steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+
   - name: build-linux-arm64-artifact
     pull: true
     image: golang:1.16
@@ -157,6 +168,11 @@ platform:
   arch: amd64
 
 steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+
   - name: build-darwin-arm64-artifact
     pull: true
     image: golang:1.16
