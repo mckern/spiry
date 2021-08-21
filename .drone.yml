@@ -8,6 +8,10 @@ platform:
   arch: amd64
 
 steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
   - name: testing
     image: golang:1.16
     commands:
@@ -38,20 +42,20 @@ steps:
         path: /drone/src/build
 
   - name: flush-to-storage
+    image: amazon/aws-cli:latest
     pull: true
-    image: meltwater/drone-cache:latest
-    settings:
-      rebuild: true
-      bucket: packages
-      endpoint: http://ambry.home.mckern.sh:9001
-      region: us-west-1
-      mount:
-        - build
+    commands:
+      - aws configure set default.s3.signature_version s3v4
+      - aws --endpoint-url $${AWS_ENDPOINT} s3 cp build/*.tar s3://$${AWS_S3_BUCKET}
     environment:
       AWS_ACCESS_KEY_ID:
         from_secret: aws_access_key_id
       AWS_SECRET_ACCESS_KEY:
         from_secret: aws_secret_access_key
+      AWS_ENDPOINT:
+        from_secret: aws_endpoint
+      AWS_S3_BUCKET:
+        from_secret: aws_s3_bucket
 
 depends_on:
   - test-linux-amd64
