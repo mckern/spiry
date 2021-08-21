@@ -18,49 +18,48 @@ kind: pipeline
 type: docker
 name: build-linux-amd64
 
-depends_on:
-  - test-linux-amd64
-
 platform:
   os: linux
   arch: amd64
 
 steps:
   - name: build-linux-amd64-artifact
+    pull: true
     image: golang:1.16
-    volumes:
-      - name: build
-        path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
-      GOOS: linux
       GOARCH: amd64
+      GOOS: linux
+    volumes:
+      - name: build
+        path: /drone/src/build
 
   - name: flush-to-storage
-    image: plugins/s3-cache
+    pull: true
+    image: meltwater/drone-cache:latest
     settings:
-      pull: true
-      debug: true
-      endpoint: http://ambry.home.mckern.sh:9001
-      root: /packages
-      access_key:
-        from_secret: aws_access_key_id
-      secret_key:
-        from_secret: aws_secret_access_key
       rebuild: true
+      bucket: packages
+      endpoint: http://ambry.home.mckern.sh:9001
+      region: us-west-1
       mount:
         - build
+    environment:
+      AWS_ACCESS_KEY_ID:
+        from_secret: aws_access_key_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_secret_access_key
+
+depends_on:
+  - test-linux-amd64
 
 ---
 kind: pipeline
 type: docker
 name: build-darwin-amd64
-
-depends_on:
-  - test-linux-amd64
 
 platform:
   os: linux
@@ -68,25 +67,26 @@ platform:
 
 steps:
   - name: build-darwin-amd64-artifact
+    pull: true
     image: golang:1.16
-    volumes:
-      - name: build
-        path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
-      GOOS: darwin
       GOARCH: amd64
+      GOOS: darwin
+    volumes:
+      - name: build
+        path: /drone/src/build
+
+depends_on:
+  - test-linux-amd64
 
 ---
 kind: pipeline
 type: docker
 name: build-linux-armv7
-
-depends_on:
-  - test-linux-amd64
 
 platform:
   os: linux
@@ -94,26 +94,27 @@ platform:
 
 steps:
   - name: build-linux-arm64-artifact
+    pull: true
     image: golang:1.16
-    volumes:
-      - name: build
-        path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
-      GOOS: linux
       GOARCH: arm
       GOARM: 7
+      GOOS: linux
+    volumes:
+      - name: build
+        path: /drone/src/build
+
+depends_on:
+  - test-linux-amd64
 
 ---
 kind: pipeline
 type: docker
 name: build-darwin-arm64
-
-depends_on:
-  - test-linux-amd64
 
 platform:
   os: linux
@@ -121,14 +122,20 @@ platform:
 
 steps:
   - name: build-darwin-arm64-artifact
+    pull: true
     image: golang:1.16
-    volumes:
-      - name: build
-        path: /drone/src/build
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
       - make package NAME=$${NAME}
     environment:
-      GOOS: darwin
       GOARCH: arm64
+      GOOS: darwin
+    volumes:
+      - name: build
+        path: /drone/src/build
+
+depends_on:
+  - test-linux-amd64
+
+...
