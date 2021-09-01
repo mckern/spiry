@@ -1,6 +1,6 @@
 module github.com/mckern/spiry
 
-go 1.16
+go 1.17
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
@@ -10,9 +10,11 @@ require (
 	github.com/likexian/gokit v0.25.2 // indirect
 	github.com/likexian/whois v1.12.1
 	github.com/likexian/whois-parser v1.20.4
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.6-0.20200504143853-81378bbcd8a1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985
+	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

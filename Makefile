@@ -23,7 +23,6 @@ $(BUILDDIR)/$(NAME):
 	$(GO) build \
 		-a \
 		-mod=vendor \
-		-trimpath \
 		-ldflags "-X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
 		-o $(BUILDDIR)/$(NAME) \
 		-trimpath \

@@ -9,7 +9,7 @@ platform:
 
 steps:
   - name: testing
-    image: golang:1.16
+    image: golang:1.17
     commands:
       - make test
 
@@ -30,7 +30,7 @@ steps:
 
   - name: build-linux-amd64-artifact
     pull: true
-    image: golang:1.16
+    image: golang:1.17
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
@@ -80,7 +80,7 @@ steps:
 
   - name: build-darwin-amd64-artifact
     pull: true
-    image: golang:1.16
+    image: golang:1.17
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
@@ -127,7 +127,7 @@ steps:
 
   - name: build-linux-arm64-artifact
     pull: true
-    image: golang:1.16
+    image: golang:1.17
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
@@ -175,7 +175,7 @@ steps:
 
   - name: build-darwin-arm64-artifact
     pull: true
-    image: golang:1.16
+    image: golang:1.17
     commands:
       - export NAME=spiry-$${GOOS}-$${GOARCH}
       - apt-get -q -o=Dpkg::Use-Pty=0 update && apt-get -q -o=Dpkg::Use-Pty=0 install -y bzip2 upx-ucl xz-utils
