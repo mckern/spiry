@@ -29,7 +29,7 @@ import (
 )
 
 // Prepare do prepare the whois info for parsing
-func Prepare(text, ext string) (string, bool) {
+func Prepare(text, ext string) (string, bool) { //nolint:cyclop
 	text = strings.Replace(text, "\r", "", -1)
 	text = strings.Replace(text, "\t", " ", -1)
 	text = strings.TrimSpace(text)
@@ -53,7 +53,7 @@ func Prepare(text, ext string) (string, bool) {
 		return prepareIT(text), true
 	case "fr", "re", "tf", "yt", "pm", "wf":
 		return prepareFR(text), true
-	case "ru", "su":
+	case "ru", "su", "xn--p1ai":
 		return prepareRU(text), true
 	case "fi":
 		return prepareFI(text), true
@@ -77,6 +77,8 @@ func Prepare(text, ext string) (string, bool) {
 		return prepareIR(text), true
 	case "rs":
 		return prepareRS(text), true
+	case "kz":
+		return prepareKZ(text), true
 	case "ee":
 		return prepareEE(text), true
 	case "cn", "xn--fiqs8s", "xn--fiqz9s":
@@ -171,7 +173,7 @@ func prepareEDU(text string) string {
 				}
 				result += fmt.Sprintf("\n%s %s: %s", token[:len(token)-1], tokens[token][index], v)
 				if tokens[token][index] != "Address" {
-					index += 1
+					index++
 				}
 			}
 		}
@@ -206,6 +208,74 @@ func prepareINT(text string) string {
 				}
 			}
 		}
+		result += "\n" + v
+	}
+
+	return result
+}
+
+// prepareKZ do prepare the .kz domain
+func prepareKZ(text string) string {
+
+	groupTokens := map[string]string{
+		"Organization Using Domain Name": "Registrant ",
+		"Administrative Contact/Agent":   "Administrative ",
+	}
+
+	topTokens := map[string]string{
+		"Domain status": "Domain status : ",
+	}
+
+	tokens := map[string]string{
+		"Primary server":   "name server",
+		"Secondary server": "name server",
+		"Current Registar": "Registrar Name",
+	}
+
+	groupToken := ""
+	topToken := ""
+	result := ""
+
+	for _, v := range strings.Split(text, "\n") {
+		v = strings.TrimSpace(v)
+
+		if v == "" {
+			groupToken = ""
+			continue
+		}
+
+		if token, ok := groupTokens[v]; ok {
+			groupToken = token
+			continue
+		}
+
+		if !strings.Contains(v, ":") {
+			if topToken != "" {
+				v = fmt.Sprintf("%s%s", topToken, v)
+			} else {
+				continue
+			}
+		}
+
+		vs := strings.SplitN(v, ":", 2)
+
+		key := strings.TrimSpace(strings.Replace(vs[0], ".", "", -1))
+		key = fmt.Sprintf("%s%s", groupToken, key)
+
+		if token, ok := tokens[key]; ok {
+			key = token
+		}
+
+		value := vs[1]
+
+		if token, ok := topTokens[key]; ok {
+			topToken = token
+		} else {
+			topToken = ""
+		}
+
+		v = fmt.Sprintf("%s: %s", key, value)
+
 		result += "\n" + v
 	}
 
@@ -326,7 +396,7 @@ func prepareHK(text string) string {
 }
 
 // prepareTW do prepare the .tw domain
-func prepareTW(text string) string {
+func prepareTW(text string) string { //nolint:cyclop
 	tokens := map[string][]string{
 		"Registrant:": {
 			"Organization",
@@ -378,7 +448,7 @@ func prepareTW(text string) string {
 			if token == "" {
 				result += "\n" + v
 			} else {
-				index += 1
+				index++
 				if index > len(tokens[token])-1 {
 					continue
 				}
@@ -387,7 +457,7 @@ func prepareTW(text string) string {
 				if tokenName == "Registrant" && tokens[token][index] == "Organization" {
 					if strings.Contains(v, "@") {
 						// Organization one line, jump to next
-						index += 1
+						index++
 					} else if index == 1 {
 						// Organization two line, join it
 						result = strings.TrimSpace(result)
@@ -610,6 +680,8 @@ func prepareRU(text string) string {
 		vs := strings.Split(v, ":")
 		if vv, ok := tokens[strings.TrimSpace(vs[0])]; ok {
 			v = fmt.Sprintf("%s: %s", vv, vs[1])
+		} else if vs[0] == "nserver" {
+			v = strings.Replace(v, ",", " ", -1)
 		}
 		result += v + "\n"
 	}
@@ -775,7 +847,7 @@ func prepareTK(text string) string {
 			v = fmt.Sprintf("Name: %s\nStatus: %s", vv[0], vv[1])
 		} else if token == "Registrant" && !strings.Contains(v, ":") {
 			v = fmt.Sprintf("%s: %s", fields[token][index], v)
-			index += 1
+			index++
 		}
 		if token != "" {
 			if !strings.Contains(v, ":") {
@@ -829,7 +901,7 @@ func prepareNL(text string) string {
 				result += "\n" + v
 			} else {
 				result += fmt.Sprintf("\n%s %s: %s", token[:len(token)-1], tokens[token][index], v)
-				index += 1
+				index++
 			}
 		}
 	}
