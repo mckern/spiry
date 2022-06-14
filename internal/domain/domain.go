@@ -12,8 +12,6 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-// const iana = "whois.iana.org"
-
 type domain struct {
 	Name        string
 	WhoisServer string
@@ -102,9 +100,9 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 	if err != nil {
 		errorMsg := fmt.Errorf("parsing whois record for domain %v failed: %w", root, err)
 
-		if errors.As(err, &whoisparser.ErrDomainNotFound) {
+		if errors.Is(err, whoisparser.ErrNotFoundDomain) {
 			errorMsg = fmt.Errorf("domain record %q not found", root)
-		} else if errors.As(err, &whoisparser.ErrDomainDataInvalid) {
+		} else if errors.Is(err, whoisparser.ErrDomainDataInvalid) {
 			errorMsg = fmt.Errorf("whois record %q is invalid", root)
 		}
 
