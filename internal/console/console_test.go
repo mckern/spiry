@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
+	"github.com/zenizh/go-capturer"
 
 	// import console to test it
 	"github.com/mckern/spiry/internal/console"
