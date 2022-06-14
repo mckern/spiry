@@ -10,7 +10,7 @@ BUILD_DATE := $(shell date '+%s')
 GIT_COMMIT := $(shell $(GIT) rev-parse --short HEAD)
 VERSION := $(shell $(GIT) describe --always --tags --dirty --first-parent)
 
-GOVER := 1.16
+GOVER := 1.18
 
 DOCKER := $(shell command -v docker)
 LINTER := $(shell command -v golangci-lint)
