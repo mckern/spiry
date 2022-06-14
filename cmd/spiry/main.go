@@ -15,8 +15,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// Basic information about `spiry` itself, and
-// the canonical root-level whois address FOR THE WORLD
+// Basic information about `spiry` itself
 const (
 	name = "spiry"
 	url  = "https://github.com/mckern/spiry"
@@ -188,13 +187,13 @@ func init() {
 }
 
 func main() {
-	domain := domain.New(flags.Arg(0))
-	domain.WhoisServer = serverAddr
+	domainName := domain.New(flags.Arg(0))
+	domainName.WhoisServer = serverAddr
 
-	rootDomain, err := domain.Root()
+	rootDomain, err := domainName.Root()
 	console.Fatal(err)
 
-	expiry, err := domain.Expiry()
+	expiry, err := domainName.Expiry()
 	console.Fatal(err)
 
 	// define a default time format
@@ -216,7 +215,7 @@ func main() {
 		output = timeFmt
 	} else if jsonFlag {
 		jsonStruct := make(map[string]string)
-		jsonStruct["domain"] = rootDomain
+		jsonStruct["domainName"] = rootDomain
 		jsonStruct["expiry"] = timeFmt
 
 		jsonOut, err := json.MarshalIndent(jsonStruct, "", "  ")
