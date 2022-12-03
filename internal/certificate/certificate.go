@@ -14,7 +14,8 @@ import (
 const defaultTLSPort = "443"
 
 type certificate struct {
-	Addr string
+	addr string
+	name string
 	raw  x509.Certificate
 }
 
@@ -23,7 +24,15 @@ func New(address string) (cert *certificate, err error) {
 	if err != nil {
 		return cert, err
 	}
-	return &certificate{Addr: addr}, err
+	return &certificate{addr: addr}, err
+}
+
+func NewWithName(name string, address string) (cert *certificate, err error) {
+	addr, err := parseAddr(address)
+	if err != nil {
+		return cert, err
+	}
+	return &certificate{addr: addr, name: name}, err
 }
 
 func (c *certificate) Expiry() (time.Time, error) {
@@ -35,14 +44,18 @@ func (c *certificate) Expiry() (time.Time, error) {
 
 	c.raw, err = c.getCert()
 	if err != nil {
-		return c.raw.NotAfter, fmt.Errorf("unable to retrieve certificate: %w", err)
+		return c.raw.NotAfter, fmt.Errorf("unable to retrieve certificate for %v: %w", c.addr, err)
 	}
 
 	return c.raw.NotAfter, err
 }
 
 func (c *certificate) Name() (name string) {
-	name, _, _ = net.SplitHostPort(c.Addr)
+	if c.name != "" {
+		return c.name
+	}
+
+	name, _, _ = net.SplitHostPort(c.addr)
 	return
 }
 
@@ -55,7 +68,7 @@ func (c *certificate) getCert() (cert x509.Certificate, err error) {
 		Timeout: time.Millisecond * time.Duration(1000),
 	}
 
-	conn, err := tls.DialWithDialer(dialer, "tcp", c.Addr, tlsConfig)
+	conn, err := tls.DialWithDialer(dialer, "tcp", c.addr, tlsConfig)
 	if err != nil {
 		return
 	}
@@ -99,6 +112,7 @@ func parseAsHostPort(addr string) (parsedAddress string, err error) {
 }
 
 func parseAsURL(addr string) (parsedAddress string, err error) {
+	console.Debug(fmt.Sprintf("trying to parse address %v", addr))
 	u, err := url.Parse(addr)
 
 	// addr failed to parse entirely, and url.Parse rejected it

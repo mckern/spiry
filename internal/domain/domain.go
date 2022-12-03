@@ -13,13 +13,17 @@ import (
 )
 
 type domain struct {
-	Name        string
+	name        string
 	WhoisServer string
 	expiryDate  time.Time
 }
 
 func New(name string) *domain {
-	return &domain{Name: name}
+	return &domain{name: name}
+}
+
+func (d *domain) Name() string {
+	return d.name
 }
 
 // Root returns the root domain (example.com, example.net, etc.) of a
@@ -27,12 +31,12 @@ func New(name string) *domain {
 // It returns a String if successful, otherwise it will
 // return an empty String and any errors encountered.
 func (d *domain) Root() (string, error) {
-	root, err := publicsuffix.EffectiveTLDPlusOne(d.Name)
+	root, err := publicsuffix.EffectiveTLDPlusOne(d.name)
 	if err != nil {
 		return "", err
 	}
 
-	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", root, d.Name))
+	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", root, d.name))
 	return root, err
 }
 
@@ -45,10 +49,10 @@ func (d *domain) TLD() (string, error) {
 	root, err := d.Root()
 	if err != nil {
 		return "",
-			fmt.Errorf("unable to look up eTLD for domain %v: %w", d.Name, err)
+			fmt.Errorf("unable to look up eTLD for domain %v: %w", d.name, err)
 	}
 
-	etld, icannManaged := publicsuffix.PublicSuffix(d.Name)
+	etld, icannManaged := publicsuffix.PublicSuffix(d.name)
 
 	// domain is not actually managed according to https://publicsuffix.org/
 	// so we should give up now
@@ -58,7 +62,7 @@ func (d *domain) TLD() (string, error) {
 				root)
 	}
 
-	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", etld, d.Name))
+	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", etld, d.name))
 	return etld, err
 }
 
@@ -76,7 +80,7 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 	if err != nil {
 		return ex,
 			fmt.Errorf("unable to find eTLD for domain %v: %w",
-				d.Name, err)
+				d.name, err)
 	}
 
 	// derive root of domain, so we aren't trying to
@@ -85,7 +89,7 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 	if err != nil {
 		return ex,
 			fmt.Errorf("unable to find domain root for %v: %w",
-				d.Name, err)
+				d.name, err)
 	}
 
 	// query for whois data

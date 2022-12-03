@@ -92,7 +92,7 @@ func TestMain(m *testing.M) {
 func TestDomainRoot(t *testing.T) {
 	d := domain.New("subdomain.mckern.sh")
 	root, _ := d.Root()
-	assert.NotEqual(t, root, d.Name, "the root domain should be parsed from a FQDN")
+	assert.NotEqual(t, root, d.Name(), "the root domain should be parsed from a FQDN")
 }
 
 func TestDomainExpiry(t *testing.T) {
