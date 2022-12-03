@@ -10,7 +10,10 @@ BUILD_DATE := $(shell date '+%s')
 GIT_COMMIT := $(shell $(GIT) rev-parse --short HEAD)
 VERSION := $(shell $(GIT) describe --always --tags --dirty --first-parent)
 
-GOVER := 1.18
+LDFLAGS := -s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'
+
+GOVER := 1.19
+CGO_ENABLED := 0
 
 DOCKER := $(shell command -v docker)
 LINTER := $(shell command -v golangci-lint)
@@ -22,8 +25,7 @@ UPX := $(shell command -v upx)
 $(BUILDDIR)/$(NAME):
 	$(GO) build \
 		-a \
-		-mod=vendor \
-		-ldflags "-X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
+		-ldflags "$(LDFLAGS)" \
 		-o $(BUILDDIR)/$(NAME) \
 		-trimpath \
 		./cmd/spiry
@@ -43,7 +45,7 @@ package: compress
 	ls -hl $(BUILDDIR)
 
 test:
-	$(GO) test -v ./...
+	$(GO) test -v ./internal/...
 
 containerized-tests: clean vendor
 ifdef DOCKER
@@ -53,7 +55,7 @@ ifdef DOCKER
 		--workdir="/app" \
 		--rm \
 		golang:$(GOVER)-alpine \
-		/bin/sh -c 'go test -v ./...'
+		/bin/sh -c 'go test -v ./internal/...'
 else
 	@echo command "docker" not found, cannot run isolated privileged tests inside Docker container
 	@exit 1
