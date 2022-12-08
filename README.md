@@ -1,52 +1,110 @@
 # Spiry
 
-A (trivially) simple tool for checking domain expiration dates
-
-[![Build Status](https://ci.home.mckern.sh/api/badges/mckern/spiry/status.svg)](https://ci.home.mckern.sh/mckern/spiry)
+A simple tool for checking domain & TLS certificate expiration dates
 
 ## Usage
 
+### Top-Level Usage
+
 ```text
 $ spiry -h
-spiry: look up domain name expiration
+Usage: spiry <command>
 
-usage: spiry [-b|-j] [-u|-r|-R] [-h|-v] [-s <server>] <domain>
-  -s, --server string   use <server> as specific whois server
-  -b, --bare            only display expiration date
-  -j, --json            display output as JSON
-  -u, --unix            display expiration date as UNIX time
-  -r, --rfc1123z        display expiration date as RFC1123Z timestamp
-  -R, --rfc3339         display expiration date as RFC3339 timestamp
-  -v, --version         display version information and exit
-  -h, --help            display this help and exit
+TLS & WHOIS expiration date lookup
 
-environment variables:
-  SPIRY_DEBUG:   print debug messages
+Commands:
+  domain         look up domain expiration date
+  certificate    look up TLS certificate expiration date
+
+Flags:
+  -h, --help        Show context-sensitive help.
+  -D, --debug       Enable debug mode
+  -v, --version     display version information and exit
+  -b, --bare        only display expiration date
+  -j, --json        display output as JSON
+  -u, --unix        display expiration date as UNIX timestamp
+  -r, --rfc1123z    display expiration date as RFC1123Z timestamp
+  -R, --rfc3339     display expiration date as RFC3339 timestamp
+
+Run "spiry <command> --help" for more information on a command.
 ```
+
+### Domain Lookup Usage
+
+```text
+$ spiry domain -h
+Usage: spiry domain <domain>
+
+look up domain expiration date
+
+Arguments:
+  <domain>    top-level domain name to look up
+
+Flags:
+  -h, --help             Show context-sensitive help.
+  -D, --debug            Enable debug mode
+  -v, --version          display version information and exit
+  -b, --bare             only display expiration date
+  -j, --json             display output as JSON
+  -u, --unix             display expiration date as UNIX timestamp
+  -r, --rfc1123z         display expiration date as RFC1123Z timestamp
+  -R, --rfc3339          display expiration date as RFC3339 timestamp
+
+  -s, --server=STRING    use <server> as specific whois server
+```
+
+### Certificate Lookup Usage
+
+```text
+$ spiry certificate -h
+Usage: spiry certificate <address>
+
+look up TLS certificate expiration date
+
+Arguments:
+  <address>    address to retrieve TLS certificate from
+
+Flags:
+  -h, --help           Show context-sensitive help.
+  -D, --debug          Enable debug mode
+  -v, --version        display version information and exit
+  -b, --bare           only display expiration date
+  -j, --json           display output as JSON
+  -u, --unix           display expiration date as UNIX timestamp
+  -r, --rfc1123z       display expiration date as RFC1123Z timestamp
+  -R, --rfc3339        display expiration date as RFC3339 timestamp
+
+  -n, --name=STRING    request TLS certificate for domain <name> instead of <address>
+```
+
+## Outputs & Examples
+
 
 And the output is straightforward:
 
 ```text
-$ spiry --bare --unix example.it
-1633824000
-$ spiry --bare example.it
-2021-10-10T00:00:00+0000
-$ spiry --json example.com
+$ spiry domain --bare --unix example.it
+1696896000
+$ spiry domain --bare example.it
+2023-10-10T00:00:00+0000
+$ spiry domain --json example.com
 {
-  "domain": "example.com",
-  "expiry": "0001-01-01T00:00:00+0000"
+  "domainName": "example.com",
+  "expiry": "2023-08-13T04:00:00+0000"
 }
-$ spiry --json --rfc3339 example.net
+$ spiry domain --json --rfc3339 example.net
 {
-  "domain": "example.net",
-  "expiry": "0001-01-01T00:00:00Z"
+  "domainName": "example.net",
+  "expiry": "2023-08-30T04:00:00Z"
 }
-$ spiry example.net
-example.net	0001-01-01T00:00:00+0000
-$ spiry "example.shh"
-ERROR: unable to find eTLD for domain example.shh: eTLD root "example.shh" is not publicly managed and cannot be looked up using `whois`
-$ spiry "example.horse"
-ERROR: whois reports domain "example.horse" as unregistered or expired
+$ spiry domain example.net
+example.net	2023-08-30T04:00:00+0000
+$ spiry domain "example.shh"
+
+spiry: error: unable to find eTLD for domain example.shh: eTLD root "example.shh" is not publicly managed and cannot be looked up using `whois`
+$ spiry domain "example.horse"
+
+spiry: error: parsing whois record for domain example.horse failed: whoisparser: domain is reserved to register
 ```
 
 ### Error handling
@@ -87,12 +145,9 @@ options may change as it grows. Once a proper versioned release is cut, this war
 
 ## TO DO
 
-- [ ] Move to Kong https://github.com/alecthomas/kong
-    - [pflag](https://github.com/spf13/pflag) has been OK but it's showing its age in places
-- [ ] SSL certificate expiry checking
-    - Subcommand support may be easier post-Kong
+- [ ] Move to GitHub Actions
 - [ ] User-definable output, `printf` style.
-    - Y'all like writing parsers? Because this will probably require a small parser.
+  - Y'all like writing parsers? Because this will probably require a small parser.
 
 ## License
 
