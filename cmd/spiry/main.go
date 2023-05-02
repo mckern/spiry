@@ -51,7 +51,7 @@ func versionMsg() string {
 	return msg
 }
 
-/////////// Domain command struct ////////////
+// ///////// Domain command struct ////////////
 
 type DomainCmd struct {
 	DomainName string `arg:"" name:"domain" help:"top-level domain name to look up"`
@@ -59,14 +59,16 @@ type DomainCmd struct {
 }
 
 func (d *DomainCmd) Run(globals *Globals) (err error) {
-	domain := domain.New(d.DomainName)
-	output, err := globals.render(domain)
-	fmt.Println(output)
+	domainName := domain.New(d.DomainName)
+	output, err := globals.render(domainName)
+	if err == nil {
+		fmt.Println(output)
+	}
 
 	return err
 }
 
-/////////// Certificate command struct ////////////
+// ///////// Certificate command struct ////////////
 
 type CertCmd struct {
 	Addr       string `arg:"" name:"address" help:"address to retrieve TLS certificate from"`
@@ -81,6 +83,9 @@ func (c *CertCmd) Run(globals *Globals) (err error) {
 
 	if c.DomainName != "" {
 		cert, err = certificate.NewWithName(c.DomainName, c.Addr)
+		if err != nil {
+			return err
+		}
 	}
 
 	output, err := globals.render(cert)
@@ -89,7 +94,7 @@ func (c *CertCmd) Run(globals *Globals) (err error) {
 	return err
 }
 
-/////////// Global command structs ////////////
+// ///////// Global command structs ////////////
 
 type Globals struct {
 	Debug   bool             `short:"D" help:"Enable debug mode"`
@@ -157,6 +162,8 @@ var cli struct {
 }
 
 func main() {
+	console.DebugVariable = "SPIRY_DEBUG"
+
 	ctx := kong.Parse(&cli,
 		kong.Name(name),
 		kong.Description("TLS & WHOIS expiration date lookup"),
@@ -174,5 +181,10 @@ func main() {
 
 	// Call the Run() method of the selected parsed command.
 	err := ctx.Run(&cli.Globals)
+
 	ctx.FatalIfErrorf(err)
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, err)
+	// 	os.Exit(1)
+	// }
 }

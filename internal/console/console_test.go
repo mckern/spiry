@@ -25,17 +25,18 @@ func captureOutput(f func()) string {
 }
 
 func enableDebugging(f func()) {
+	console.DebugVariable = "SPIRY_DEBUG"
 	originalValue := os.Getenv("SPIRY_DEBUG")
 	_ = os.Setenv("SPIRY_DEBUG", "true")
 	f()
-	os.Setenv("SPIRY_DEBUG", originalValue)
+	_ = os.Setenv("SPIRY_DEBUG", originalValue)
 }
 
 func disableDebugging(f func()) {
 	originalValue := os.Getenv("SPIRY_DEBUG")
-	os.Unsetenv("SPIRY_DEBUG")
+	_ = os.Unsetenv("SPIRY_DEBUG")
 	f()
-	os.Setenv("SPIRY_DEBUG", originalValue)
+	_ = os.Setenv("SPIRY_DEBUG", originalValue)
 }
 
 var consoleOutputTests = []struct {
@@ -50,7 +51,7 @@ var consoleOutputTests = []struct {
 func TestRegularConsoleOutputs(t *testing.T) {
 	for _, tcb := range consoleOutputTests {
 		// We expect to see no output at all on stdin or stdout for
-		// these functions without debugging enabled so we explicitly
+		// these functions without debugging enabled, so we explicitly
 		// disable debugging regardless of what we inherited from
 		// our running environment
 		disableDebugging(func() {

@@ -6,17 +6,19 @@ import (
 	"strings"
 )
 
+var DebugVariable = "DEBUG"
+
 func Debug(msg string) {
-	value, defined := os.LookupEnv("SPIRY_DEBUG")
-	if defined && value != "" {
-		fmt.Fprintf(os.Stderr, "DEBUG: %s\n", strings.Trim(msg, "\n"))
+	_, defined := os.LookupEnv(DebugVariable)
+	if defined {
+		fmt.Fprintf(os.Stderr, "DEBUG: %s\n", strings.TrimSpace(msg))
 	}
 }
 
 func Warn(msg string) {
-	value, defined := os.LookupEnv("SPIRY_DEBUG")
-	if defined && value != "" {
-		fmt.Fprintf(os.Stderr, "WARNING: %s\n", strings.Trim(msg, "\n"))
+	_, defined := os.LookupEnv(DebugVariable)
+	if defined {
+		fmt.Fprintf(os.Stderr, "WARNING: %s\n", strings.TrimSpace(msg))
 	}
 }
 

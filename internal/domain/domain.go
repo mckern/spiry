@@ -12,17 +12,17 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-type domain struct {
+type Domain struct {
 	name        string
 	WhoisServer string
 	expiryDate  time.Time
 }
 
-func New(name string) *domain {
-	return &domain{name: name}
+func New(name string) *Domain {
+	return &Domain{name: name}
 }
 
-func (d *domain) Name() string {
+func (d *Domain) Name() string {
 	return d.name
 }
 
@@ -30,7 +30,7 @@ func (d *domain) Name() string {
 // given fully-qualified domain name.
 // It returns a String if successful, otherwise it will
 // return an empty String and any errors encountered.
-func (d *domain) Root() (string, error) {
+func (d *Domain) Root() (string, error) {
 	root, err := publicsuffix.EffectiveTLDPlusOne(d.name)
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func (d *domain) Root() (string, error) {
 // list maintained at https://publicsuffix.org/.
 // It returns a String if successful, otherwise it will
 // return an empty String and any errors encountered.
-func (d *domain) TLD() (string, error) {
+func (d *Domain) TLD() (string, error) {
 	root, err := d.Root()
 	if err != nil {
 		return "",
@@ -68,9 +68,9 @@ func (d *domain) TLD() (string, error) {
 
 // Expiry returns the expiration date of a given fully-qualified
 // domain name according to public DNS records.
-// It returns a time.Time value if successfull, otherwise it will
+// It returns a time.Time value if successful, otherwise it will
 // return any errors encountered.
-func (d *domain) Expiry() (ex time.Time, err error) {
+func (d *Domain) Expiry() (ex time.Time, err error) {
 	if !d.expiryDate.IsZero() {
 		return d.expiryDate, nil
 	}
@@ -104,15 +104,19 @@ func (d *domain) Expiry() (ex time.Time, err error) {
 	if err != nil {
 		errorMsg := fmt.Errorf("parsing whois record for domain %v failed: %w", root, err)
 
+		// figure out what kind of error was returned and whether
+		// it warrants additional information/context
 		if errors.Is(err, whoisparser.ErrNotFoundDomain) {
 			errorMsg = fmt.Errorf("domain record %q not found", root)
 		} else if errors.Is(err, whoisparser.ErrDomainDataInvalid) {
 			errorMsg = fmt.Errorf("whois record %q is invalid", root)
+		} else if errors.Is(err, whoisparser.ErrReservedDomain) {
+			errorMsg = fmt.Errorf("reserved domain record %q cannot be looked up", root)
 		}
 
 		return ex, errorMsg
 	}
 
-	d.expiryDate, _ = dateparse.ParseAny(result.Domain.ExpirationDate)
+	d.expiryDate, err = dateparse.ParseAny(result.Domain.ExpirationDate)
 	return d.expiryDate, err
 }
