@@ -136,9 +136,10 @@ func (g *Globals) render(res resource) (output string, err error) {
 	if g.BareFlag {
 		output = timeFmt
 	} else if g.JsonFlag {
-		jsonStruct := make(map[string]string)
-		jsonStruct["domainName"] = res.Name()
-		jsonStruct["expiry"] = timeFmt
+		jsonStruct := map[string]string{
+			"domainName": res.Name(),
+			"expiry":     timeFmt,
+		}
 
 		jsonOut, err := json.MarshalIndent(jsonStruct, "", "  ")
 		if err != nil {

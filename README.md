@@ -6,6 +6,8 @@ A simple tool for checking domain & TLS certificate expiration dates
 
 ### Top-Level Usage
 
+These options are common to all `spiry` subcommands:
+
 ```text
 $ spiry -h
 Usage: spiry <command>
@@ -79,32 +81,35 @@ Flags:
 
 ## Outputs & Examples
 
-
-And the output is straightforward:
+Command output is straightforward:
 
 ```text
 $ spiry domain --bare --unix example.it
 1696896000
+
 $ spiry domain --bare example.it
 2023-10-10T00:00:00+0000
+
 $ spiry domain --json example.com
 {
   "domainName": "example.com",
   "expiry": "2023-08-13T04:00:00+0000"
 }
+
 $ spiry domain --json --rfc3339 example.net
 {
   "domainName": "example.net",
   "expiry": "2023-08-30T04:00:00Z"
 }
+
 $ spiry domain example.net
 example.net	2023-08-30T04:00:00+0000
+
 $ spiry domain "example.shh"
-
 spiry: error: unable to find eTLD for domain example.shh: eTLD root "example.shh" is not publicly managed and cannot be looked up using `whois`
-$ spiry domain "example.horse"
 
-spiry: error: parsing whois record for domain example.horse failed: whoisparser: domain is reserved to register
+$ spiry domain "example.horse"
+spiry: error: reserved domain record "example.horse" cannot be looked up
 ```
 
 ### Error handling
@@ -114,9 +119,8 @@ help text will be emitted to standard error. WHOIS lookup errors will be emitted
 text.
 
 ```
-$ ./build/spiry -j -b -u -r example.com 1>/dev/null
-ERROR: cannot use --bare and --json together
-ERROR: cannot use --rfc1123z, --rfc3339, and --unix together
+$ ./build/spiry -j -b -u -r domain example.com 1>/dev/null
+spiry: error: --bare and --json can't be used together
 
 spiry: look up domain name expiration
 
