@@ -12,7 +12,7 @@ VERSION := $(shell $(GIT) describe --always --tags --dirty --first-parent)
 
 LDFLAGS := -s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'
 
-GOVER := 1.21
+GOVER := 1.22
 CGO_ENABLED := 0
 
 DOCKER := $(shell command -v docker)
@@ -24,11 +24,11 @@ UPX := $(shell command -v upx)
 
 $(BUILDDIR)/$(NAME):
 	$(GO) build \
-		-a \
-		-ldflags "$(LDFLAGS)" \
-		-o $(BUILDDIR)/$(NAME) \
-		-trimpath \
-		./cmd/spiry
+	  -a \
+	  -ldflags "$(LDFLAGS)" \
+	  -o $(BUILDDIR)/$(NAME) \
+	  -trimpath \
+	  ./cmd/spiry
 
 build: $(BUILDDIR)/$(NAME)
 
