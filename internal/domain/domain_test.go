@@ -90,8 +90,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestDomainRoot(t *testing.T) {
-	d := domain.New("subdomain.mckern.sh")
-	root, _ := d.Root()
+	d, err := domain.New("subdomain.mckern.sh")
+	assert.Nil(t, err, "a valid domain record should not return an error")
+
+	root, err := d.Root()
+	assert.Nil(t, err, "a valid domain record should not return when parsing the root domain")
 	assert.NotEqual(t, root, d.Name(), "the root domain should be parsed from a FQDN")
 }
 
@@ -100,7 +103,7 @@ func TestDomainExpiry(t *testing.T) {
 		t.Skipf("Skipping testing %q in unprivileged environment", t.Name())
 	}
 
-	d := domain.New("mckern.sh")
+	d, _ := domain.New("mckern.sh")
 	d.WhoisServer = "127.0.0.1"
 	val, err := d.Expiry()
 
@@ -115,10 +118,10 @@ func TestDomainNotFound(t *testing.T) {
 		t.Skipf("Skipping testing %q in unprivileged environment", t.Name())
 	}
 
-	d := domain.New("no-such-example.com")
+	d, _ := domain.New("no-such-example.com")
 	d.WhoisServer = "127.0.0.1"
 	val, err := d.Expiry()
 
-	assert.NotNil(t, err, "a non-existant domain should fail to parse")
-	assert.True(t, val.IsZero(), "an non-existant expiration date should be the default value")
+	assert.NotNil(t, err, "a non-existent domain should fail to parse")
+	assert.True(t, val.IsZero(), "an non-existent expiration date should be the default value")
 }

@@ -4,19 +4,49 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/url"
 	"time"
 
-	"github.com/mckern/spiry/internal/console"
+	"github.com/asaskevich/govalidator"
+	"github.com/mckern/spiry/internal/spiry"
 )
 
 const defaultTLSPort = "443"
 
 type Certificate struct {
-	addr string
-	name string
-	raw  x509.Certificate
+	addr     string
+	name     string
+	insecure bool
+	raw      *x509.Certificate
+}
+
+var _ spiry.ExpiringResource = (*Certificate)(nil)
+
+type Command struct {
+	DomainName string `name:"name" short:"n" help:"request TLS certificate for domain <name> instead of <address>"`
+	Insecure   bool   `name:"insecure" short:"k" help:"allow insecure server connections"`
+	Addr       string `arg:"" name:"address" help:"address to retrieve TLS certificate from"`
+}
+
+func (c *Command) Run(globals *spiry.Command) (err error) {
+	cert, err := New(c.Addr)
+	if err != nil {
+		return err
+	}
+
+	if c.DomainName != "" {
+		cert, err = NewWithName(c.DomainName, c.Addr)
+		if err != nil {
+			return err
+		}
+	}
+
+	output, err := globals.Render(cert)
+	fmt.Println(output)
+
+	return err
 }
 
 func New(address string) (cert *Certificate, err error) {
@@ -27,12 +57,13 @@ func New(address string) (cert *Certificate, err error) {
 	return &Certificate{addr: addr}, err
 }
 
-func NewWithName(name string, address string) (*Certificate, error) {
-	if !isDomainName(name) {
-		return nil, fmt.Errorf("certificate: invalid name %q given", name)
+func NewWithName(name string, addr string) (*Certificate, error) {
+	if !govalidator.IsDNSName(name) {
+		slog.Debug("invalid DNS name given", "name", name)
+		return nil, fmt.Errorf("%q is an invalid DNS name", name)
 	}
 
-	addr, err := parseAddr(address)
+	addr, err := parseAddr(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -40,16 +71,18 @@ func NewWithName(name string, address string) (*Certificate, error) {
 }
 
 func (c *Certificate) Expiry() (time.Time, error) {
-	var err error
-
-	if !c.raw.NotAfter.IsZero() {
-		return c.raw.NotAfter, err
+	// if NotAfter already has a valid value, use it
+	if c.raw != nil && !c.raw.NotAfter.IsZero() {
+		return c.raw.NotAfter, nil
 	}
 
-	c.raw, err = c.getCert()
+	cert, err := c.getCert()
 	if err != nil {
-		return c.raw.NotAfter, fmt.Errorf("unable to retrieve certificate for %v: %w", c.addr, err)
+		// no cert to read time from, so use time.Time's zero value
+		return time.Time{},
+			fmt.Errorf("unable to retrieve certificate for %v: %w", c.addr, err)
 	}
+	c.raw = cert
 
 	return c.raw.NotAfter, err
 }
@@ -63,8 +96,11 @@ func (c *Certificate) Name() (name string) {
 	return
 }
 
-func (c *Certificate) getCert() (cert x509.Certificate, err error) {
+func (c *Certificate) getCert() (cert *x509.Certificate, err error) {
 	tlsConfig := &tls.Config{
+		// this is intentionally done to allow
+		// retrieval of any TLS certificate -- we only
+		// care about its expiration date.
 		InsecureSkipVerify: true,
 		ServerName:         c.Name()}
 
@@ -79,62 +115,87 @@ func (c *Certificate) getCert() (cert x509.Certificate, err error) {
 
 	defer conn.Close()
 	certs := conn.ConnectionState().PeerCertificates
-	cert = *certs[0]
+	cert = certs[0]
 	return
 }
 
 func parseAddr(addr string) (parsedAddress string, err error) {
-	parsedAddress, err = parseAsURL(addr)
-	if err == nil {
-		return
+	if govalidator.IsURL(addr) {
+		parsedAddress, err = parseAsURL(addr)
+		if err == nil {
+			return
+		}
 	}
-	console.Debug(fmt.Sprintf("cannot parse %q as URL: %v", addr, err.Error()))
 
+	isIP := govalidator.IsIP(addr)
+	isDNSName := govalidator.IsDNSName(addr)
+
+	slog.Debug("looking for IP address or DNS name",
+		"address", addr,
+		"ip", isIP,
+		"dnsname", isDNSName)
+	if isIP || isDNSName {
+		slog.Debug("attempting to parse address with default TLS port",
+			"address", addr,
+			"port", defaultTLSPort)
+		defaultAddr := net.JoinHostPort(addr, defaultTLSPort)
+		parsedAddress, err = parseAsHostPort(defaultAddr)
+		if err == nil {
+			return
+		}
+	}
+
+	slog.Debug("attempting to parse as Host:Port pair", "address", addr)
 	parsedAddress, err = parseAsHostPort(addr)
-	if err == nil {
-		return
-	}
-	console.Debug(fmt.Sprintf("cannot parse %q as Host:Port pair: %v", addr, err.Error()))
-
-	defaultAddr := net.JoinHostPort(addr, defaultTLSPort)
-	console.Debug(fmt.Sprintf("attempting to parse %q with default port as %q", addr, defaultAddr))
-	parsedAddress, err = parseAsHostPort(defaultAddr)
 	return
 }
 
 func parseAsHostPort(addr string) (parsedAddress string, err error) {
 	// test to see if this is already a valid host:port pair
+	slog.Debug("trying to parse address as Host:Port pair",
+		"address", addr)
 	name, port, err := net.SplitHostPort(addr)
-	if err == nil {
-		parsedAddress = net.JoinHostPort(name, port)
-		if parsedAddress == addr {
-			console.Debug(fmt.Sprintf("address %q is already a host:port pair", parsedAddress))
-			return
-		}
+	if err != nil {
+		slog.Debug("failed to parse address as Host:Port pair", "address", addr)
+		return parsedAddress,
+			fmt.Errorf("cannot parse %q as Host:Port pair: %w", addr, err)
 	}
+
+	if (!govalidator.IsIP(name) && !govalidator.IsDNSName(name)) ||
+		!govalidator.IsPort(port) {
+		slog.Debug("unable to parse address as valid Host:Port pair",
+			"name", name,
+			"port", port)
+		return parsedAddress, fmt.Errorf("%q is an invalid Host:Port pair", name)
+	}
+
+	parsedAddress = net.JoinHostPort(name, port)
+	if parsedAddress == addr {
+		return parsedAddress, nil
+	}
+
 	return
 }
 
 func parseAsURL(addr string) (parsedAddress string, err error) {
-	console.Debug(fmt.Sprintf("trying to parse address %v", addr))
+	slog.Debug("trying to parse address as URL", "address", addr)
 	u, err := url.Parse(addr)
 
-	// addr failed to parse entirely, and url.Parse rejected it
-	if err != nil {
-		msg := fmt.Sprintf("failed to parse address %q", addr)
-		console.Debug(msg)
-		return parsedAddress, fmt.Errorf(msg)
+	// either addr failed to parse entirely, and url.Parse explicitly rejected it,
+	// or addr failed to parse correctly but url.Parse did not return an error,
+	// leaving the pieces of data that we care about unusable
+	if err != nil || (u.Scheme == "" && u.Host == "") {
+		slog.Debug("failed to parse address", "address", addr)
+		return parsedAddress, fmt.Errorf("failed to parse address %q", addr)
 	}
 
-	// addr failed to parse correctly, and the pieces of data
-	// that we care about are not usable
-	if u.Scheme == "" && u.Host == "" {
-		msg := fmt.Sprintf("failed to parse address %q correctly", addr)
-		console.Debug(msg)
-		return parsedAddress, fmt.Errorf(msg)
+	// the address parsed, but the domain name passed is invalid
+	if !govalidator.IsDNSName(u.Hostname()) {
+		slog.Debug("invalid DNS name", "domain", u.Hostname())
+		return parsedAddress, fmt.Errorf("domain %q is an invalid DNS name", u.Hostname())
 	}
 
-	// host and port were both defined, and will be used explicitly
+	// host and port were both defined after parsing,so they will be explicitly used
 	if u.Host != "" && u.Port() != "" {
 		parsedAddress = net.JoinHostPort(u.Hostname(), u.Port())
 		return
@@ -148,69 +209,4 @@ func parseAsURL(addr string) (parsedAddress string, err error) {
 	}
 
 	return
-}
-
-// copied wholesale from stdlib's net.isDomainName() func,
-// because it's not exported by stdlib.
-// ----
-// isDomainName checks if a string is a presentation-format domain name
-// (currently restricted to hostname-compatible "preferred name" LDH labels and
-// SRV-like "underscore labels"; see golang.org/issue/12421).
-func isDomainName(s string) bool {
-	// The root domain name is valid. See golang.org/issue/45715.
-	if s == "." {
-		return true
-	}
-
-	// See RFC 1035, RFC 3696.
-	// Presentation format has dots before every label except the first, and the
-	// terminal empty label is optional here because we assume fully-qualified
-	// (absolute) input. We must therefore reserve space for the first and last
-	// labels' length octets in wire format, where they are necessary and the
-	// maximum total length is 255.
-	// So our _effective_ maximum is 253, but 254 is not rejected if the last
-	// character is a dot.
-	l := len(s)
-	if l == 0 || l > 254 || l == 254 && s[l-1] != '.' {
-		return false
-	}
-
-	last := byte('.')
-	nonNumeric := false // true once we've seen a letter or hyphen
-	partlen := 0
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		default:
-			return false
-		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_':
-			nonNumeric = true
-			partlen++
-		case '0' <= c && c <= '9':
-			// fine
-			partlen++
-		case c == '-':
-			// Byte before dash cannot be dot.
-			if last == '.' {
-				return false
-			}
-			partlen++
-			nonNumeric = true
-		case c == '.':
-			// Byte before dot cannot be dot, dash.
-			if last == '.' || last == '-' {
-				return false
-			}
-			if partlen > 63 || partlen == 0 {
-				return false
-			}
-			partlen = 0
-		}
-		last = c
-	}
-	if last == '-' || partlen > 63 {
-		return false
-	}
-
-	return nonNumeric
 }

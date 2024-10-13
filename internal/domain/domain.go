@@ -3,14 +3,46 @@ package domain
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/araddon/dateparse"
+	"github.com/asaskevich/govalidator"
 	"github.com/likexian/whois"
 	whoisparser "github.com/likexian/whois-parser"
-	"github.com/mckern/spiry/internal/console"
+	"github.com/mckern/spiry/internal/spiry"
+	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
 )
+
+var IncompleteTLDs = []string{
+	"ac", "ad", "al", "an", "ao", "aq", "ar", "aw", "ba",
+	"bf", "bh", "bm", "bs", "bt", "bv", "bw", "bz", "cd",
+	"cg", "ck", "cm", "cr", "cu", "cv", "cw", "cy", "dj",
+	"do", "eg", "er", "et", "fj", "fk", "fm", "ga", "gb",
+	"ge", "gf", "gh", "gm", "gn", "gp", "gq", "gr", "gt",
+	"gu", "gw", "hm", "jm", "jo", "kh", "km", "kn", "kp",
+	"kw", "ky", "lb", "lc", "lk", "lr", "ls", "mc", "mh",
+	"mil", "mk", "mm", "mq", "mr", "mt", "mv", "mw", "mz",
+	"ne", "ni", "np", "nr", "pa", "pg", "ph", "pk", "pn",
+	"ps", "py", "rw", "sd", "sj", "sl", "sr", "sv", "sz",
+	"td", "tg", "tj", "to", "tp", "tt", "va", "vi", "vn",
+	"vu", "ye", "za", "zm", "zw",
+
+	// punycode conversions of IDNs
+	"xn--0zwm56d", "xn--11b5bs3a9aj6g", "xn--45brj9c",
+	"xn--80akhbyknj4f", "xn--90a3ac", "xn--9t4b11yi5a",
+	"xn--deba0ad", "xn--fpcrj9c3d", "xn--fzc2c9e2c",
+	"xn--g6w251d", "xn--gecrj9c", "xn--h2brj9c",
+	"xn--hgbk6aj7f53bba", "xn--hlcj6aya9esc7a", "xn--jxalpdlp",
+	"xn--kgbechtv", "xn--l1acc", "xn--mgbayh7gpa",
+	"xn--mgbbh1a71e", "xn--mgbc0a9azcg", "xn--pgbs0dh",
+	"xn--s9brj9c", "xn--wgbh1c", "xn--xkc2al3hye2a",
+	"xn--xkc2dl3a5ee0h", "xn--zckzah",
+}
 
 type Domain struct {
 	name        string
@@ -18,8 +50,36 @@ type Domain struct {
 	expiryDate  time.Time
 }
 
-func New(name string) *Domain {
-	return &Domain{name: name}
+var _ spiry.ExpiringResource = (*Domain)(nil)
+
+type Command struct {
+	DomainName string `arg:"" name:"domain" help:"top-level domain name to look up"`
+	ServerAddr string `name:"server" short:"s" help:"use <server> as specific whois server"`
+}
+
+func (d *Command) Run(globals *spiry.Command) (err error) {
+	domainName, err := New(d.DomainName)
+	if err != nil {
+		return
+	}
+
+	output, err := globals.Render(domainName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(output)
+	return
+}
+
+func New(name string) (*Domain, error) {
+	name = strings.ToLower(name)
+	if !govalidator.IsDNSName(name) {
+		slog.Debug("invalid DNS name given", "name", name)
+		return nil, fmt.Errorf("%q is an invalid DNS name", name)
+	}
+
+	return &Domain{name: name}, nil
 }
 
 func (d *Domain) Name() string {
@@ -33,10 +93,11 @@ func (d *Domain) Name() string {
 func (d *Domain) Root() (string, error) {
 	root, err := publicsuffix.EffectiveTLDPlusOne(d.name)
 	if err != nil {
+		slog.Debug("unable to find root domain from FQDN",
+			"fqdn", d.name)
 		return "", err
 	}
 
-	console.Debug(fmt.Sprintf("found root domain %q for FQDN %q", root, d.name))
 	return root, err
 }
 
@@ -52,17 +113,34 @@ func (d *Domain) TLD() (string, error) {
 			fmt.Errorf("unable to look up eTLD for domain %v: %w", d.name, err)
 	}
 
-	etld, icannManaged := publicsuffix.PublicSuffix(d.name)
-
+	// note that publicsuffix.PublicSuffix assumes case-sensitive comparison
+	// and all of its reference domains are lowercase.
+	// while all domains were cast to lowercase in New(),
+	// they're cast to lowercase here  just in case.
+	etld, icannManaged := publicsuffix.PublicSuffix(strings.ToLower(d.name))
 	// domain is not actually managed according to https://publicsuffix.org/
 	// so we should give up now
 	if !icannManaged {
 		return "",
-			fmt.Errorf("eTLD root %q is not publicly managed and cannot be looked up using `whois`",
+			fmt.Errorf("eTLD root %q is not publicly managed and cannot be looked up using the whois network",
 				root)
 	}
 
-	console.Debug(fmt.Sprintf("found eTLD %q for root domain %q", etld, d.name))
+	// check for internationalized domains and convert them
+	// to their ascii equivalent for comparison; if they don't map,
+	// then give up.
+	etld, err = idna.ToASCII(etld)
+	if err != nil {
+		return "", err
+	}
+
+	// check if the domain comes from a known-incomplete registry,
+	// and let the user know they may not get what they're looking for.
+	if slices.Contains(IncompleteTLDs, etld) {
+		fmt.Fprintf(os.Stderr,
+			"warning: TLD %q returns incomplete WHOIS data; you may not be able to look up an expiration date\n", etld)
+	}
+
 	return etld, err
 }
 
@@ -108,8 +186,6 @@ func (d *Domain) Expiry() (ex time.Time, err error) {
 		// it warrants additional information/context
 		if errors.Is(err, whoisparser.ErrNotFoundDomain) {
 			errorMsg = fmt.Errorf("domain record %q not found", root)
-		} else if errors.Is(err, whoisparser.ErrDomainDataInvalid) {
-			errorMsg = fmt.Errorf("whois record %q is invalid", root)
 		} else if errors.Is(err, whoisparser.ErrReservedDomain) {
 			errorMsg = fmt.Errorf("reserved domain record %q cannot be looked up", root)
 		}
