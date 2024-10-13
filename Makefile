@@ -10,7 +10,10 @@ BUILD_DATE := $(shell date '+%s')
 GIT_COMMIT := $(shell $(GIT) rev-parse --short HEAD)
 VERSION := $(shell $(GIT) describe --always --tags --dirty --first-parent)
 
-GOVER := 1.16
+LDFLAGS := -s -w -X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'
+
+GOVER := 1.22
+CGO_ENABLED := 0
 
 DOCKER := $(shell command -v docker)
 LINTER := $(shell command -v golangci-lint)
@@ -19,15 +22,13 @@ UPX := $(shell command -v upx)
 .DEFAULT_TARGET := $(BUILDDIR)/$(NAME)
 .PHONY: build compress test lint vendor
 
-$(BUILDDIR)/$(NAME): vendor
+$(BUILDDIR)/$(NAME):
 	$(GO) build \
-		-a \
-		-mod=vendor \
-		-trimpath \
-		-ldflags "-X main.versionNumber=$(VERSION) -X main.gitCommit=$(GIT_COMMIT) -X 'main.buildDate=$(BUILD_DATE)'" \
-		-o $(BUILDDIR)/$(NAME) \
-		-trimpath \
-		./cmd/spiry
+	  -a \
+	  -ldflags "$(LDFLAGS)" \
+	  -o $(BUILDDIR)/$(NAME) \
+	  -trimpath \
+	  ./cmd/spiry
 
 build: $(BUILDDIR)/$(NAME)
 
@@ -40,10 +41,11 @@ else
 endif
 
 package: compress
-	@tar cf $(BUILDDIR)/$(NAME).tar $(BUILDDIR)/$(NAME)
+	tar cfv $(BUILDDIR)/$(NAME)-$(VERSION).tar $(BUILDDIR)/$(NAME)
+	ls -hl $(BUILDDIR)
 
 test:
-	$(GO) test -v ./...
+	$(GO) test -v ./internal/...
 
 containerized-tests: clean vendor
 ifdef DOCKER
@@ -53,7 +55,7 @@ ifdef DOCKER
 		--workdir="/app" \
 		--rm \
 		golang:$(GOVER)-alpine \
-		/bin/sh -c 'go test -v ./...'
+		/bin/sh -c 'go test -v ./internal/...'
 else
 	@echo command "docker" not found, cannot run isolated privileged tests inside Docker container
 	@exit 1
@@ -67,6 +69,8 @@ else
 	@exit 1
 endif
 
+tidy:
+	@$(GO) mod tidy
 
 vendor:
 	@$(GO) mod vendor
