@@ -4,7 +4,6 @@ project_name: spiry
 
 before:
   hooks:
-    - test -d dist && rm -rf dist
     - go mod tidy
 
 builds:
