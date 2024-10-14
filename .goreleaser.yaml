@@ -29,7 +29,7 @@ universal_binaries:
 
 notarize:
   macos:
-    - enabled: true
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
       sign:
         certificate: "{{.Env.MACOS_SIGN_P12}}"
         password: "{{.Env.MACOS_SIGN_PASSWORD}}"
