@@ -1,0 +1,12 @@
+---
+default: true
+MD003:
+  style: consistent
+MD013: false
+MD033: false
+first-line-h1: false
+no-hard-tabs:
+  code_blocks: false
+no-trailing-spaces: true
+no-trailing-punctuation:
+  punctuation: ",;:"
