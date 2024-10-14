@@ -118,7 +118,7 @@ Error messages are emitted in plaintext format to standard error. If the errors 
 help text will be emitted to standard error. WHOIS lookup errors will be emitted to standard error, without the help
 text.
 
-```
+```text
 $ ./build/spiry -j -b -u -r domain example.com 1>/dev/null
 spiry: error: --bare and --json can't be used together
 
@@ -150,7 +150,7 @@ options may change as it grows. Once a proper versioned release is cut, this war
 ## TO DO
 
 - [ ] Move to GitHub Actions
-- [ ] User-definable output, `printf` style.
+- [ ] User-definable output, `printf` style?
   - Y'all like writing parsers? Because this will probably require a small parser.
 
 ## License
