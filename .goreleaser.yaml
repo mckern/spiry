@@ -51,3 +51,9 @@ archives:
 
 changelog:
   disable: false
+
+release:
+  draft: true
+  replace_existing_draft: true
+  replace_existing_artifacts: true
+  prerelease: auto
