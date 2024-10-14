@@ -17,10 +17,9 @@ CGO_ENABLED := 0
 
 DOCKER := $(shell command -v docker)
 LINTER := $(shell command -v golangci-lint)
-UPX := $(shell command -v upx)
 
 .DEFAULT_TARGET := $(BUILDDIR)/$(NAME)
-.PHONY: build compress test lint vendor
+.PHONY: build test lint vendor
 
 $(BUILDDIR)/$(NAME):
 	$(GO) build \
@@ -32,15 +31,7 @@ $(BUILDDIR)/$(NAME):
 
 build: $(BUILDDIR)/$(NAME)
 
-compress: $(BUILDDIR)/$(NAME)
-ifdef UPX
-	$(UPX) -9 --keep --no-progress $(BUILDDIR)/$(NAME) && mv $(BUILDDIR)/$(NAME).~ $(BUILDDIR)/$(NAME).orig
-else
-	@echo command "upx" not found, cannot compress binary >&2
-	@exit 1
-endif
-
-package: compress
+package:
 	tar cfv $(BUILDDIR)/$(NAME)-$(VERSION).tar $(BUILDDIR)/$(NAME)
 	ls -hl $(BUILDDIR)
 
