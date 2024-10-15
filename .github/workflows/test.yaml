@@ -3,6 +3,8 @@ name: test Spiry
 on:
   pull_request:
   push:
+    branches:
+      - "**"
   workflow_call:
 
 jobs:
