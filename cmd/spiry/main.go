@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -45,15 +44,15 @@ func versionMsg() string {
 	return msg
 }
 
-var cli struct {
+type cli struct {
 	spiry.Command
 	Domain      domain.Command      `cmd:"domain" help:"look up domain expiration date"`
 	Certificate certificate.Command `cmd:"certificate" help:"look up TLS certificate expiration date"`
 }
 
 func main() {
-	ctx := kong.Parse(&cli,
-		kong.Name(name),
+	cli := cli{}
+	app := kong.Must(&cli, kong.Name(name),
 		kong.Description("TLS & WHOIS expiration date lookup"),
 		kong.ConfigureHelp(kong.HelpOptions{
 			FlagsLast:           true,
@@ -65,14 +64,14 @@ func main() {
 		kong.Vars{"version": strings.TrimSpace(versionMsg())},
 	)
 
-	if cli.Command.Debug {
+	ctx, err := app.Parse(os.Args[1:])
+	app.FatalIfErrorf(err)
+
+	if cli.Debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
 	// Call the Run() method of the selected parsed command.
-	err := ctx.Run(&cli.Command)
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Unwrap(err))
-	}
+	err = ctx.Run(&cli.Command)
+	app.FatalIfErrorf(err)
 }
