@@ -42,7 +42,7 @@ func handleConnection(c net.Conn) {
 		log.Fatal(err)
 	}
 
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -55,7 +55,7 @@ func handleConnection(c net.Conn) {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	c.Close()
+	_ = c.Close()
 }
 
 func startWhoisServer(l net.Listener) {
@@ -70,7 +70,7 @@ func startWhoisServer(l net.Listener) {
 
 func stopWhoisServer(l net.Listener) {
 	log.Printf("stopping fake whois server on %v\n", l.Addr().String())
-	l.Close()
+	_ = l.Close()
 }
 
 func TestMain(m *testing.M) {
