@@ -16,10 +16,9 @@ import (
 const defaultTLSPort = "443"
 
 type Certificate struct {
-	addr     string
-	name     string
-	insecure bool
-	raw      *x509.Certificate
+	addr string
+	name string
+	raw  *x509.Certificate
 }
 
 var _ spiry.ExpiringResource = (*Certificate)(nil)
@@ -113,7 +112,8 @@ func (c *Certificate) getCert() (cert *x509.Certificate, err error) {
 		return
 	}
 
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
+
 	certs := conn.ConnectionState().PeerCertificates
 	cert = certs[0]
 	return

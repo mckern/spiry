@@ -40,7 +40,8 @@ notarize:
         key: "{{.Env.MACOS_NOTARY_KEY}}"
 
 archives:
-  - format: zip
+  - formats:
+      - zip
 
 changelog:
   disable: false
