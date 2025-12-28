@@ -13,8 +13,6 @@ import (
 	"github.com/mckern/spiry/internal/certificate"
 	"github.com/mckern/spiry/internal/domain"
 	"github.com/mckern/spiry/internal/spiry"
-
-	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 // Basic information about `spiry` itself
