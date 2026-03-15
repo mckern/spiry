@@ -19,12 +19,12 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.4
+          version: v2.11
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.26"
 
       - name: Run tests
         run: go test -v ./...
